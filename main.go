@@ -13,5 +13,5 @@ func main() {
 	app := &app.App{}
 	app.Initialize(config)
 	port := os.Getenv("PORT")
-	app.Run(port)
+	app.Run(":" + port)
 }
