@@ -9,7 +9,6 @@ type DBConfig struct {
 	Username string
 	Password string
 	Name     string
-	Charset  string
 }
 
 func GetConfig() *Config {
@@ -19,7 +18,6 @@ func GetConfig() *Config {
 			Username: "bumblebee",
 			Password: "fire2823",
 			Name:     "schoolmealdb",
-			Charset:  "utf8",
 		},
 	}
 }
