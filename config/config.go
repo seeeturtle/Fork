@@ -15,9 +15,9 @@ func GetConfig() *Config {
 	return &Config{
 		DB: &DBConfig{
 			Dialect:  "postgres",
-			Username: "username",
-			Password: "password",
-			Name:     "dbname",
+			Username: "bumblebee",
+			Password: "fire2823",
+			Name:     "schoolmealdb",
 		},
 	}
 }
