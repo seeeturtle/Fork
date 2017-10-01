@@ -68,12 +68,12 @@ func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		response.Text = commands
 	case matched == true:
 		re := regexp.MustCompile(patternScope)
-		delicious, _ := regexp.MatchString(fmt.Sprintf("(%s)(맛있는)급식", patternScope), filterd)
+		delicious, _ := regexp.MatchString(fmt.Sprintf("(%s) 맛있는 급식", patternScope), message.Content)
 		scope := re.FindString(response.Text)
 		if delicious == true {
-			getResponse(db, &response, scope, true)
+			response.Text = getResponseText(db, scope, true)
 		} else {
-			getResponse(db, &response, scope, false)
+			response.Text = getResponseText(db, scope, false)
 		}
 	default:
 		response.Text = "제대로 된 명령어가 아닙니다."
@@ -81,28 +81,48 @@ func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, response)
 }
 
-func getResponse(db *sql.DB, res *Response, scope string, delicious bool) {
+func getResponseText(db *sql.DB, scope string, delicious bool) string {
 	switch scope {
 	case "오늘":
-		t := time.Now()
 		loc, _ := time.LoadLocation("Asia/Seoul")
-		t = t.In(loc)
+		today := time.Now().In(loc).Format("20060102")
 		if delicious {
-			delicious_foods, err := model.GetDeliciousFoods(db, &t)
-			if err != nil {
-				res.Text = "데이터가 없습니다."
-			}
-			dels := strings.Join(delicious_foods, "\n")
-			res.Text = "오늘 맛있는 급식은\n" + dels + "\n입니다."
-			return
+			var foods []model.DeliciousFood
+			foods, _ = getDeliciousFoods(db, today, today)
+			return getTodaysDeliciousFoods(foods)
 		}
-		foods, err := model.GetFoods(db, &t)
-		if err != nil {
-			res.Text = "데이터가 없습니다."
-			return
-		}
-		f := strings.Join(foods, "\n")
-		res.Text = "오늘 급식은\n" + f + "\n입니다."
-		return
+		var foods []model.Food
+		foods, _ = getFoods(db, today, today)
+		return getTodaysFoods(foods)
+	default:
+		return ""
 	}
+}
+
+func getTodaysFoods(foods []model.Food) string {
+	names := make([]string, len(foods))
+	for _, food := range foods {
+		names = append(names, food.Name)
+	}
+	f := strings.Join(names, ",")
+	text := "오늘은 " + f + " 나와요!"
+	return text
+}
+
+func getTodaysDeliciousFoods(foods []model.DeliciousFood) string {
+	names := make([]string, len(foods))
+	for _, food := range foods {
+		names = append(names, food.Name)
+	}
+	f := strings.Join(names, ",")
+	text := "오늘은 " + f + " 나와요!\n빨리 먹고 싶네요!"
+	return text
+}
+
+func getFoods(db *sql.DB, startDate string, endDate string) ([]model.Food, error) {
+	return []model.Food{model.Food{Name: "Test"}}, nil
+}
+
+func getDeliciousFoods(db *sql.DB, startDate string, endDate string) ([]model.DeliciousFood, error) {
+	return []model.DeliciousFood{model.DeliciousFood{Name: "Test"}}, nil
 }
