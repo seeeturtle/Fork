@@ -3,9 +3,7 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
