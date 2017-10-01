@@ -99,7 +99,7 @@ func getResponseText(db *sql.DB, scope string, delicious bool) string {
 }
 
 func getTodaysFoods(foods []model.Food) string {
-	names := make([]string, len(foods))
+	names := []string{}
 	for _, food := range foods {
 		names = append(names, food.Name)
 	}
@@ -109,7 +109,7 @@ func getTodaysFoods(foods []model.Food) string {
 }
 
 func getTodaysDeliciousFoods(foods []model.DeliciousFood) string {
-	names := make([]string, len(foods))
+	names := []string{}
 	for _, food := range foods {
 		names = append(names, food.Name)
 	}
