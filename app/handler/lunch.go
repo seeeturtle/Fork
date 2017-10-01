@@ -11,6 +11,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var Expected = []string{"오늘", "내일", "다음주", "이번주", "이번달", "다음달", "맛있", "급식", "점심"}
+
 type Response struct {
 	Text string `json:"text"`
 }
@@ -54,28 +56,64 @@ func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	도움말
 	이 도움말 출력.
 	`
-	scopes := []string{"오늘", "내일", "다음주", "이번주", "이번달", "다음달"}
-	patternScope := strings.Join(scopes, "|")
-	pattern := fmt.Sprintf("(%s) (맛있는 )?급식", patternScope)
-	matched, _ := regexp.MatchString(pattern, message.Content)
+	ok, delicious, date := parseContent(message.Content)
 
 	switch {
 	case message.Type != "text":
 		response.Text = "문자가 아닙니다."
 	case message.Content == "도움말":
 		response.Text = commands
-	case matched == true:
-		delicious, _ := regexp.MatchString(fmt.Sprintf("(%s) 맛있는 급식", patternScope), message.Content)
-		scope := strings.Split(message.Content, " ")[0]
+	case ok && (date != ""):
 		if delicious {
-			response.Text = getResponseText(db, scope, true)
+			response.Text = getResponseText(db, date, true)
 		} else {
-			response.Text = getResponseText(db, scope, false)
+			response.Text = getResponseText(db, date, false)
 		}
 	default:
 		response.Text = "제대로 된 명령어가 아닙니다."
 	}
 	respondJSON(w, http.StatusOK, response)
+}
+
+func parseContent(str string) (ok bool, delicious bool, date string) {
+	expected := make(map[string]bool, len(Expected))
+	for _, e := range Expected {
+		expected[e] = false
+	}
+	splitted := strings.Split(str, " ")
+	for _, w := range splitted {
+		for k := range expected {
+			if strings.Contains(w, k) {
+				expected[k] = true
+			}
+		}
+	}
+	for k, b := range expected {
+		if !b {
+			continue
+		}
+		switch k {
+		case "점심":
+			ok = true
+		case "급식":
+			ok = true
+		case "오늘":
+			date = k
+		case "내일":
+			date = k
+		case "다음주":
+			date = k
+		case "이번주":
+			date = k
+		case "이번달":
+			date = k
+		case "다음달":
+			date = k
+		case "맛있":
+			delicious = true
+		}
+	}
+	return
 }
 
 func getResponseText(db *sql.DB, scope string, delicious bool) string {
