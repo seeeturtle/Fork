@@ -23,7 +23,7 @@ func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 		Buttons []string `json:"buttons"`
 	}{
 		"buttons",
-		[]string{"오늘 급식", "내일 급식"},
+		[]string{"도움말", "시작하기"},
 	}
 	respondJSON(w, http.StatusOK, keyboard)
 }
