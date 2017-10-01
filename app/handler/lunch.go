@@ -1,14 +1,13 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 	"time"
-
-	"database/sql"
 
 	"github.com/joshua1b/SchoolMeal/app/model"
 	_ "github.com/lib/pq"
@@ -31,9 +30,9 @@ func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 
 func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	var message struct {
-		UserKey string
-		Type    string
-		Content string
+		UserKey string `json:"user_key"`
+		Type    string `json:"type"`
+		Content string `json:"content"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -57,11 +56,10 @@ func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	도움말
 	이 도움말 출력.
 	`
-	scopes := []string{"오늘, 내일, 다음주, 이번주, 이번달, 다음달"}
+	scopes := []string{"오늘", "내일", "다음주", "이번주", "이번달", "다음달"}
 	patternScope := strings.Join(scopes, "|")
-	pattern := fmt.Sprintf("(%s)(맛있는)?급식", patternScope)
-	filterd := strings.Replace(strings.TrimSpace(message.Content), " ", "", -1)
-	matched, _ := regexp.MatchString(pattern, filterd)
+	pattern := fmt.Sprintf("(%s) (맛있는 )?급식", patternScope)
+	matched, _ := regexp.MatchString(pattern, message.Content)
 
 	switch {
 	case message.Type != "text":
