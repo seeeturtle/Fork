@@ -67,10 +67,9 @@ func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	case message.Content == "도움말":
 		response.Text = commands
 	case matched == true:
-		re := regexp.MustCompile(patternScope)
 		delicious, _ := regexp.MatchString(fmt.Sprintf("(%s) 맛있는 급식", patternScope), message.Content)
-		scope := re.FindString(response.Text)
-		if delicious == true {
+		scope := strings.Split(message.Content, " ")[0]
+		if delicious {
 			response.Text = getResponseText(db, scope, true)
 		} else {
 			response.Text = getResponseText(db, scope, false)
