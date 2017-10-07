@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/joshua1b/SchoolMeal/app"
-	"github.com/joshua1b/SchoolMeal/config"
+	"github.com/joshua1b/Plate/app"
+	"github.com/joshua1b/Plate/config"
 )
 
 func main() {

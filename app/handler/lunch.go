@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joshua1b/SchoolMeal/app/model"
+	"github.com/joshua1b/Plate/app/model"
 	_ "github.com/lib/pq"
 )
 

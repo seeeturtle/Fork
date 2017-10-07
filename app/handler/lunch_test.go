@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/joshua1b/SchoolMeal/app/handler"
+	"github.com/joshua1b/Plate/app/handler"
 )
 
 type Response struct {
