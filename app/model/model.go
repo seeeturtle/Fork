@@ -5,7 +5,13 @@ import (
 )
 
 type Food struct {
-	Name string
+	Name      string
+	Delicious bool
 }
 
 type DeliciousFood Food
+
+type Lunch struct {
+	Date  string
+	Foods []Food
+}
