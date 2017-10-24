@@ -17,10 +17,6 @@ type Scope interface {
 	Name() string
 }
 
-type Response struct {
-	Text string `json:"text"`
-}
-
 type Today struct {
 	name string
 }
@@ -43,6 +39,10 @@ type ThisMonth struct {
 
 type NextMonth struct {
 	name string
+}
+
+type Response struct {
+	Text string `json:"text"`
 }
 
 const (
@@ -229,12 +229,20 @@ func JoinWithComma(lunches []model.Lunch) string {
 	return str
 }
 
-func getFoods(db *sql.DB, startDate string, endDate string) ([]Lunch, error) {
-	return []model.Food{model.Food{Name: "Test"}}, nil
+func getLunches(db *sql.DB, startDate string, endDate string) ([]model.Lunch, error) {
+	return []model.Lunch{
+		model.Lunch{
+			Foods: []model.Food{model.Food{"Food"}},
+		},
+	}, nil
 }
 
-func getDeliciousFoods(db *sql.DB, startDate string, endDate string) ([]DeliciousLunch, error) {
-	return []model.DeliciousFood{model.DeliciousFood{Name: "Test"}}, nil
+func getDeliciousFoods(db *sql.DB, startDate string, endDate string) ([]model.Lunch, error) {
+	return []model.Lunch{
+		model.Lunch{
+			Foods: []model.DeliciousFood{model.DeliciousFood{"DeliciousFood"}},
+		},
+	}, nil
 }
 
 func getFood(db *sql.DB, date string) ([]model.Food, error) {

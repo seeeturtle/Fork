@@ -5,8 +5,7 @@ import (
 )
 
 type Food struct {
-	Name      string
-	Delicious bool
+	Name string
 }
 
 type DeliciousFood Food
