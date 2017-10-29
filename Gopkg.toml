@@ -23,7 +23,15 @@
 
 [[constraint]]
   name = "github.com/gorilla/mux"
-  version = "1.4.0"
+  version = "1.5.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/jinzhu/now"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/joshua1b/Plate"
 
 [[constraint]]
   branch = "master"
