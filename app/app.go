@@ -8,8 +8,8 @@ import (
 	"database/sql"
 
 	"github.com/gorilla/mux"
-	"github.com/joshua1b/Plate/app/handler"
-	"github.com/joshua1b/Plate/config"
+	"github.com/joshua1b/Fork/app/handler"
+	"github.com/joshua1b/Fork/config"
 	_ "github.com/lib/pq"
 )
 

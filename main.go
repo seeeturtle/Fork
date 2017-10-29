@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/joshua1b/Plate/app"
-	"github.com/joshua1b/Plate/config"
+	"github.com/joshua1b/Fork/app"
+	"github.com/joshua1b/Fork/config"
 )
 
 func main() {
