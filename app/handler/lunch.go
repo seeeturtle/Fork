@@ -8,7 +8,7 @@ import (
 	"time"
 
 	nows "github.com/jinzhu/now"
-	"github.com/joshua1b/Plate/app/model"
+	"github.com/joshua1b/Fork/app/model"
 	_ "github.com/lib/pq"
 )
 
