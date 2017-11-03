@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -9,12 +8,13 @@ import (
 
 	nows "github.com/jinzhu/now"
 	"github.com/joshua1b/Fork/app/model"
-	_ "github.com/lib/pq"
 )
 
 type Scope interface {
-	Message(bool, time.Time, *sql.DB) string
+	Message(bool, time.Time) string
 	Name() string
+	FoodMessage([]model.Lunch) string
+	DeliciousFoodMessage([]model.Lunch) string
 }
 
 type Today struct {
@@ -51,7 +51,9 @@ const (
 	CannotUnderstand = "뭐라는 거지... 미안, 내가 좀 멍청해."
 )
 
-const formatText string = "20060102"
+const timeForm string = "20060102"
+
+const LocForm string = "Asia/Seoul"
 
 var Scopes = []Scope{
 	Today{name: "오늘"},
@@ -75,7 +77,7 @@ func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, keyboard)
 }
 
-func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	var message struct {
 		UserKey string `json:"user_key"`
 		Type    string `json:"type"`
@@ -118,9 +120,9 @@ func CreateMessage(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		response.Text = help
 	case ok && (date != ""):
 		if delicious {
-			response.Text = getResponseText(db, date, true)
+			response.Text = getResponseText(date, true)
 		} else {
-			response.Text = getResponseText(db, date, false)
+			response.Text = getResponseText(date, false)
 		}
 	default:
 		response.Text = CannotUnderstand
@@ -172,49 +174,15 @@ func parseContent(str string) (ok bool, delicious bool, date string) {
 	return
 }
 
-func getResponseText(db *sql.DB, scope string, delicious bool) string {
+func getResponseText(scope string, delicious bool) string {
 	loc, _ := time.LoadLocation("Asia/Seoul")
 	now := time.Now().In(loc)
 	for _, s := range Scopes {
 		if scope == s.Name() {
-			return s.Message(delicious, now, db)
+			return s.Message(delicious, now)
 		}
 	}
 	return CannotUnderstand
-}
-
-func TodayFoodsMessage(lunches []model.Lunch) string {
-	f := JoinWithComma(lunches)
-	text := "오늘은 " + f + " 나온다."
-	return text
-}
-
-func TodayDeliciousFoodsMessage(lunches []model.Lunch) string {
-	f := JoinWithComma(lunches)
-	text := "오늘은 " + f + " 나온다!!!!!!"
-	return text
-}
-
-func TomorrowFoodsMessage(lunches []model.Lunch) string {
-	f := JoinWithComma(lunches)
-	text := "내일은 " + f + "나온다."
-	return text
-}
-
-func TomorrowDeliciousFoodsMessage(lunches []model.Lunch) string {
-	f := JoinWithComma(lunches)
-	text := "내일은 " + f + "나온다!!!!!!!"
-	return text
-}
-
-func ThisWeekFoodsMessage(lunches []model.Lunch) string {
-	f := JoinWithComma(lunches)
-	return f + "이번주에는 이런게 있어."
-}
-
-func ThisWeekDeliciousFoodsMessage(lunches []model.Lunch) string {
-	f := JoinWithComma(lunches)
-	return f + "다음주에는 이런게 있어."
 }
 
 func JoinWithComma(lunches []model.Lunch) string {
@@ -224,183 +192,195 @@ func JoinWithComma(lunches []model.Lunch) string {
 		for _, food := range lunch.Foods {
 			names = append(names, food.Name)
 		}
-		str += lunch.Date + "\n" + strings.Join(names, "\n")
+		str += lunch.Date + "\n" + strings.Join(names, "\n") + "\n"
 	}
 	return str
 }
 
-func getLunches(db *sql.DB, startDate string, endDate string) ([]model.Lunch, error) {
-	return []model.Lunch{
-		model.Lunch{
-			Foods: []model.Food{model.Food{"Food"}},
-		},
-	}, nil
-}
-
-func getDeliciousFoods(db *sql.DB, startDate string, endDate string) ([]model.Lunch, error) {
-	return []model.Lunch{
-		model.Lunch{
-			Foods: []model.DeliciousFood{model.DeliciousFood{"DeliciousFood"}},
-		},
-	}, nil
-}
-
-func getFood(db *sql.DB, date string) ([]model.Food, error) {
-	return []model.Food{model.Food{Name: "Test"}}, nil
-}
-
-func getDeliciousFood(db *sql.DB, date string) ([]model.DeliciousFood, error) {
-	return []model.DeliciousFood{model.DeliciousFood{Name: "Test"}}, nil
-}
-
-func (t Today) Message(delicious bool, now time.Time, db *sql.DB) string {
-	today := now.Format(formatText)
+func (t Today) Message(delicious bool, now time.Time) string {
+	today := now.Format(timeForm)
 	if delicious {
-		deliciousFoods, err := getDeliciousFood(db, today)
+		deliciousFoods, err := model.Lunches.GetDelicious(today, today)
 		if err != nil {
 			return NoData
 		}
-		return TodayDeliciousFoodsMessage(deliciousFoods)
+		return t.DeliciousFoodMessage(deliciousFoods)
 	}
-	lunches, err := getFood(db, today)
+	lunches, err := model.Lunches.Get(today, today)
 	if err != nil {
 		return NoData
 	}
-	return TodayFoodsMessage(lunches)
+	return t.FoodMessage(lunches)
 }
 
 func (t Today) Name() string {
 	return t.name
 }
 
-func (to Tomorrow) Message(delicious bool, now time.Time, db *sql.DB) string {
-	tomorrow := now.AddDate(0, 0, 1).Format(formatText)
+func (t Today) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "오늘은 이런게 나온당"
+}
+
+func (t Today) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "친구들 출격!!!!"
+}
+
+func (to Tomorrow) Message(delicious bool, now time.Time) string {
+	tomorrow := now.AddDate(0, 0, 1).Format(timeForm)
 	if delicious {
-		deliciousFoods, err := getDeliciousFood(db, tomorrow)
+		deliciousFoods, err := model.Lunches.GetDelicious(tomorrow, tomorrow)
 		if err != nil {
 			return NoData
 		}
-		return TomorrowDeliciousFoodsMessage(deliciousFoods)
+		return to.DeliciousFoodMessage(deliciousFoods)
 	}
-	lunches, err := getFood(db, tomorrow)
+	lunches, err := model.Lunches.Get(tomorrow, tomorrow)
 	if err != nil {
 		return NoData
 	}
-	return TomorrowFoodsMessage(lunches)
+	return to.FoodMessage(lunches)
 }
 
 func (to Tomorrow) Name() string {
 	return to.name
 }
 
-func (tw ThisWeek) Message(delicious bool, now time.Time, db *sql.DB) string {
+func (to Tomorrow) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "내일 이런 거 먹을 수 있넹"
+}
+
+func (to Tomorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "내일은 어쩔 수 없이 학교를 가야겠네"
+}
+
+func (tw ThisWeek) Message(delicious bool, now time.Time) string {
 	n := nows.New(now)
-	beginningOfThisWeek := n.BeginningOfWeek().Format(formatText)
-	endOfThisWeek := n.EndOfWeek().Format(formatText)
+	beginningOfThisWeek := n.BeginningOfWeek().Format(timeForm)
+	endOfThisWeek := n.EndOfWeek().Format(timeForm)
 	if delicious {
-		deliciousFoods, err := getDeliciousFoods(db,
-			beginningOfThisWeek,
-			endOfThisWeek,
-		)
+		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfThisWeek, endOfThisWeek)
 		if err != nil {
 			return NoData
 		}
-		return ThisWeekDeliciousFoodsMessage(deliciousFoods)
+		return tw.DeliciousFoodMessage(deliciousFoods)
 	}
-	lunches, err := getFoods(db,
-		beginningOfThisWeek,
-		endOfThisWeek,
-	)
+	lunches, err := model.Lunches.Get(beginningOfThisWeek, endOfThisWeek)
 	if err != nil {
 		return NoData
 	}
-	return ThisWeekFoodsMessage(lunches)
+	return tw.FoodMessage(lunches)
 }
 
 func (tw ThisWeek) Name() string {
 	return tw.name
 }
 
-func (nw NextWeek) Message(delicious bool, now time.Time, db *sql.DB) string {
+func (tw ThisWeek) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "이번주에는 이런게 나온당"
+}
+
+func (tw ThisWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "우워어ㅓㅓ 출격!!!"
+}
+
+func (nw NextWeek) Message(delicious bool, now time.Time) string {
 	n := nows.New(now.AddDate(0, 0, 7))
-	beginningOfNextWeek := n.BeginningOfWeek().Format(formatText)
-	endOfNextWeek := n.EndOfWeek().Format(formatText)
+	beginningOfNextWeek := n.BeginningOfWeek().Format(timeForm)
+	endOfNextWeek := n.EndOfWeek().Format(timeForm)
 	if delicious {
-		deliciousFoods, err := getDeliciousFoods(db,
-			beginningOfNextWeek,
-			endOfNextWeek,
-		)
+		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfNextWeek, endOfNextWeek)
 		if err != nil {
 			return NoData
 		}
-		return NextWeekDeliciousFoodsMessage(deliciousFoods)
+		return nw.DeliciousFoodMessage(deliciousFoods)
 	}
-	lunches, err := getFoods(db,
-		beginningOfNextWeek,
-		endOfNextWeek,
-	)
+	lunches, err := model.Lunches.Get(beginningOfNextWeek, endOfNextWeek)
 	if err != nil {
 		return NoData
 	}
-	return NextWeekFoodsMessage(lunches)
+	return nw.FoodMessage(lunches)
 }
 
 func (nw NextWeek) Name() string {
 	return nw.name
 }
 
-func (tm ThisMonth) Message(delicious bool, now time.Time, db *sql.DB) string {
+func (nw NextWeek) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "다음주는 이런게 나온당..."
+}
+
+func (nm NextWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "와아아ㅏㅏ아 역시 급식이 최고야!"
+}
+
+func (tm ThisMonth) Message(delicious bool, now time.Time) string {
 	n := nows.New(now)
-	beginningOfThisMonth := n.BeginningOfMonth().Format(formatText)
-	endOfThisMonth := n.EndOfMonth().Format(formatText)
+	beginningOfThisMonth := n.BeginningOfMonth().Format(timeForm)
+	endOfThisMonth := n.EndOfMonth().Format(timeForm)
 	if delicious {
-		deliciousFoods, err := getDeliciousFoods(db,
-			beginningOfThisMonth,
-			endOfThisMonth,
-		)
+		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfThisMonth, endOfThisMonth)
 		if err != nil {
 			return NoData
 		}
-		return ThisMonthDeliciousFoodsMessage(deliciousFoods)
+		return tm.DeliciousFoodMessage(deliciousFoods)
 	}
-	lunches, err := getFoods(db,
-		beginningOfThisMonth,
-		beginningOfThisMonth,
-	)
+	lunches, err := model.Lunches.Get(beginningOfThisMonth, endOfThisMonth)
 	if err != nil {
 		return NoData
 	}
-	return ThisMonthFoodsMessage(lunches)
+	return tm.FoodMessage(lunches)
 }
 
 func (tm ThisMonth) Name() string {
 	return tm.name
 }
 
-func (nm NextMonth) Message(delicious bool, now time.Time, db *sql.DB) string {
+func (tm ThisMonth) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "이번달에는 이런게 있넹"
+}
+
+func (tm ThisMonth) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "이번달에는 이런게 있네!!! 가자!!!"
+}
+
+func (nm NextMonth) Message(delicious bool, now time.Time) string {
 	n := nows.New(now)
-	beginningOfNextMonth := n.BeginningOfMonth().Format(formatText)
-	endOfNextMonth := n.EndOfMonth().Format(formatText)
+	beginningOfNextMonth := n.BeginningOfMonth().Format(timeForm)
+	endOfNextMonth := n.EndOfMonth().Format(timeForm)
 	if delicious {
-		deliciousFoods, err := getDeliciousFoods(db,
-			beginningOfNextMonth,
-			endOfNextMonth,
-		)
+		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfNextMonth, endOfNextMonth)
 		if err != nil {
 			return NoData
 		}
-		return NextMonthDeliciousFoodsMessage(deliciousFoods)
+		return nm.DeliciousFoodMessage(deliciousFoods)
 	}
-	lunches, err := getFoods(db,
-		beginningOfNextMonth,
-		beginningOfNextMonth,
-	)
+	lunches, err := model.Lunches.Get(beginningOfNextMonth, endOfNextMonth)
 	if err != nil {
 		return NoData
 	}
-	return NextMonthFoodsMessage(lunches)
+	return nm.FoodMessage(lunches)
 }
 
 func (nm NextMonth) Name() string {
 	return nm.name
+}
+
+func (nm NextMonth) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "다음달에는 이런게 있넹"
+}
+
+func (nm NextMonth) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "다음달에는 이런게 있네!!! 다음달은 도대체 언제 오는 거야!!!!"
 }

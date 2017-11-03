@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joshua1b/Fork/app/handler"
+	"github.com/joshua1b/Fork/app/model"
 	"github.com/joshua1b/Fork/config"
 	_ "github.com/lib/pq"
 )
@@ -35,12 +36,17 @@ func (a *App) Initialize(config *config.Config) {
 	a.DB = db
 	a.Router = mux.NewRouter()
 	a.setRouters()
+	a.setModels()
 }
 
 // setRouters sets the all required routers
 func (a *App) setRouters() {
 	a.Get("/keyboard", a.GetKeyboard)
 	a.Post("/message", a.CreateMessage)
+}
+
+func (a *App) setModels() {
+	model.Lunches = model.Lunches.New(a.DB)
 }
 
 // Get wraps the router for GET method
@@ -66,7 +72,7 @@ func (a *App) GetKeyboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) CreateMessage(w http.ResponseWriter, r *http.Request) {
-	handler.CreateMessage(a.DB, w, r)
+	handler.CreateMessage(w, r)
 }
 
 // Run the app and log request
