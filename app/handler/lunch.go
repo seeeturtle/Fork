@@ -11,7 +11,8 @@ import (
 )
 
 type Scope interface {
-	Message(bool, time.Time) string
+	Beginning(time.Time) string
+	End(time.Time) string
 	Name() string
 	FoodMessage([]model.Lunch) string
 	DeliciousFoodMessage([]model.Lunch) string
@@ -65,6 +66,8 @@ var Scopes = []Scope{
 }
 
 var Expected = []string{"맛있", "급식", "점심"}
+
+var Loc, _ = time.LoadLocation(LocForm)
 
 func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 	keyboard := struct {
@@ -175,11 +178,10 @@ func parseContent(str string) (ok bool, delicious bool, date string) {
 }
 
 func getResponseText(scope string, delicious bool) string {
-	loc, _ := time.LoadLocation("Asia/Seoul")
-	now := time.Now().In(loc)
+	now := time.Now().In(Loc)
 	for _, s := range Scopes {
 		if scope == s.Name() {
-			return s.Message(delicious, now)
+			return Message(s, delicious, now)
 		}
 	}
 	return CannotUnderstand
@@ -197,20 +199,29 @@ func JoinWithComma(lunches []model.Lunch) string {
 	return str
 }
 
-func (t Today) Message(delicious bool, now time.Time) string {
-	today := now.Format(timeForm)
+func Message(s Scope, delicious bool, now time.Time) string {
+	beginning := s.Beginning(now)
+	end := s.End(now)
 	if delicious {
-		deliciousFoods, err := model.Lunches.GetDelicious(today, today)
+		deliciousLunches, err := model.Lunches.GetDelicious(beginning, end)
 		if err != nil {
 			return NoData
 		}
-		return t.DeliciousFoodMessage(deliciousFoods)
+		return s.DeliciousFoodMessage(deliciousLunches)
 	}
-	lunches, err := model.Lunches.Get(today, today)
+	lunches, err := model.Lunches.Get(beginning, end)
 	if err != nil {
 		return NoData
 	}
-	return t.FoodMessage(lunches)
+	return s.FoodMessage(lunches)
+}
+
+func (t Today) Beginning(now time.Time) string {
+	return now.Format(timeForm)
+}
+
+func (t Today) End(now time.Time) string {
+	return now.Format(timeForm)
 }
 
 func (t Today) Name() string {
@@ -227,20 +238,12 @@ func (t Today) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "친구들 출격!!!!"
 }
 
-func (to Tomorrow) Message(delicious bool, now time.Time) string {
-	tomorrow := now.AddDate(0, 0, 1).Format(timeForm)
-	if delicious {
-		deliciousFoods, err := model.Lunches.GetDelicious(tomorrow, tomorrow)
-		if err != nil {
-			return NoData
-		}
-		return to.DeliciousFoodMessage(deliciousFoods)
-	}
-	lunches, err := model.Lunches.Get(tomorrow, tomorrow)
-	if err != nil {
-		return NoData
-	}
-	return to.FoodMessage(lunches)
+func (to Tomorrow) Beginning(now time.Time) string {
+	return now.AddDate(0, 0, 1).Format(timeForm)
+}
+
+func (to Tomorrow) End(now time.Time) string {
+	return now.AddDate(0, 0, 1).Format(timeForm)
 }
 
 func (to Tomorrow) Name() string {
@@ -257,22 +260,14 @@ func (to Tomorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "내일은 어쩔 수 없이 학교를 가야겠네"
 }
 
-func (tw ThisWeek) Message(delicious bool, now time.Time) string {
+func (tw ThisWeek) Beginning(now time.Time) string {
 	n := nows.New(now)
-	beginningOfThisWeek := n.BeginningOfWeek().Format(timeForm)
-	endOfThisWeek := n.EndOfWeek().Format(timeForm)
-	if delicious {
-		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfThisWeek, endOfThisWeek)
-		if err != nil {
-			return NoData
-		}
-		return tw.DeliciousFoodMessage(deliciousFoods)
-	}
-	lunches, err := model.Lunches.Get(beginningOfThisWeek, endOfThisWeek)
-	if err != nil {
-		return NoData
-	}
-	return tw.FoodMessage(lunches)
+	return n.BeginningOfWeek().In(Loc).Format(timeForm)
+}
+
+func (tw ThisWeek) End(now time.Time) string {
+	n := nows.New(now)
+	return n.EndOfWeek().In(Loc).Format(timeForm)
 }
 
 func (tw ThisWeek) Name() string {
@@ -289,22 +284,14 @@ func (tw ThisWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "우워어ㅓㅓ 출격!!!"
 }
 
-func (nw NextWeek) Message(delicious bool, now time.Time) string {
+func (nw NextWeek) Beginning(now time.Time) string {
 	n := nows.New(now.AddDate(0, 0, 7))
-	beginningOfNextWeek := n.BeginningOfWeek().Format(timeForm)
-	endOfNextWeek := n.EndOfWeek().Format(timeForm)
-	if delicious {
-		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfNextWeek, endOfNextWeek)
-		if err != nil {
-			return NoData
-		}
-		return nw.DeliciousFoodMessage(deliciousFoods)
-	}
-	lunches, err := model.Lunches.Get(beginningOfNextWeek, endOfNextWeek)
-	if err != nil {
-		return NoData
-	}
-	return nw.FoodMessage(lunches)
+	return n.BeginningOfWeek().In(Loc).Format(timeForm)
+}
+
+func (nw NextWeek) End(now time.Time) string {
+	n := nows.New(now.AddDate(0, 0, 7))
+	return n.EndOfWeek().In(Loc).Format(timeForm)
 }
 
 func (nw NextWeek) Name() string {
@@ -321,22 +308,14 @@ func (nm NextWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "와아아ㅏㅏ아 역시 급식이 최고야!"
 }
 
-func (tm ThisMonth) Message(delicious bool, now time.Time) string {
+func (tm ThisMonth) Beginning(now time.Time) string {
 	n := nows.New(now)
-	beginningOfThisMonth := n.BeginningOfMonth().Format(timeForm)
-	endOfThisMonth := n.EndOfMonth().Format(timeForm)
-	if delicious {
-		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfThisMonth, endOfThisMonth)
-		if err != nil {
-			return NoData
-		}
-		return tm.DeliciousFoodMessage(deliciousFoods)
-	}
-	lunches, err := model.Lunches.Get(beginningOfThisMonth, endOfThisMonth)
-	if err != nil {
-		return NoData
-	}
-	return tm.FoodMessage(lunches)
+	return n.BeginningOfMonth().In(Loc).Format(timeForm)
+}
+
+func (tm ThisMonth) End(now time.Time) string {
+	n := nows.New(now)
+	return n.EndOfMonth().In(Loc).Format(timeForm)
 }
 
 func (tm ThisMonth) Name() string {
@@ -353,22 +332,14 @@ func (tm ThisMonth) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "이번달에는 이런게 있네!!! 가자!!!"
 }
 
-func (nm NextMonth) Message(delicious bool, now time.Time) string {
-	n := nows.New(now)
-	beginningOfNextMonth := n.BeginningOfMonth().Format(timeForm)
-	endOfNextMonth := n.EndOfMonth().Format(timeForm)
-	if delicious {
-		deliciousFoods, err := model.Lunches.GetDelicious(beginningOfNextMonth, endOfNextMonth)
-		if err != nil {
-			return NoData
-		}
-		return nm.DeliciousFoodMessage(deliciousFoods)
-	}
-	lunches, err := model.Lunches.Get(beginningOfNextMonth, endOfNextMonth)
-	if err != nil {
-		return NoData
-	}
-	return nm.FoodMessage(lunches)
+func (nm NextMonth) Beginning(now time.Time) string {
+	n := nows.New(now.AddDate(0, 1, 0))
+	return n.BeginningOfMonth().In(Loc).Format(timeForm)
+}
+
+func (nm NextMonth) End(now time.Time) string {
+	n := nows.New(now.AddDate(0, 1, 0))
+	return n.EndOfMonth().In(Loc).Format(timeForm)
 }
 
 func (nm NextMonth) Name() string {
