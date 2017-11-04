@@ -44,11 +44,7 @@ type NextMonth struct {
 	name string
 }
 
-type Response struct {
-	message struct {
-		text string
-	}
-}
+type Response map[string]map[string]string
 
 const (
 	NoData           = "급식이 없어"
@@ -99,7 +95,8 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	var response Response
+	response := make(Response)
+	var text string
 
 	help := `
 	언제 급식을 원하는 건지,
@@ -122,18 +119,20 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case message.Type != "text":
-		response.message.text = NotText
+		text = NotText
 	case message.Content == "도와줘":
-		response.message.text = help
+		text = help
 	case ok && (date != ""):
 		if delicious {
-			response.message.text = getResponseText(date, true)
+			text = getResponseText(date, true)
 		} else {
-			response.message.text = getResponseText(date, false)
+			text = getResponseText(date, false)
 		}
 	default:
-		response.message.text = CannotUnderstand
+		text = CannotUnderstand
 	}
+	response["message"] = make(map[string]string)
+	response["message"]["text"] = text
 	respondJSON(w, http.StatusOK, response)
 }
 
