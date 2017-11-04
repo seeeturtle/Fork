@@ -207,7 +207,7 @@ func JoinWithComma(lunches []model.Lunch) string {
 func getDateStr(date string) string {
 	dateTime, _ := time.Parse(timeForm, date)
 	dateTime = roundTime(dateTime.In(Loc))
-	now := roundTime(time.Now())
+	now := roundTime(time.Now().In(Loc))
 	duration := dateTime.Sub(now)
 	diffDays := int(duration.Hours() / 24)
 	switch diffDays {
@@ -264,11 +264,11 @@ func Message(s Scope, delicious bool) string {
 }
 
 func (t Today) Beginning() string {
-	return time.Now().Format(timeForm)
+	return time.Now().In(Loc).Format(timeForm)
 }
 
 func (t Today) End() string {
-	return time.Now().Format(timeForm)
+	return time.Now().In(Loc).Format(timeForm)
 }
 
 func (t Today) Name() string {
@@ -286,11 +286,11 @@ func (t Today) DeliciousFoodMessage(lunches []model.Lunch) string {
 }
 
 func (to Tomorrow) Beginning() string {
-	return time.Now().AddDate(0, 0, 1).Format(timeForm)
+	return time.Now().In(Loc).AddDate(0, 0, 1).Format(timeForm)
 }
 
 func (to Tomorrow) End() string {
-	return time.Now().AddDate(0, 0, 1).Format(timeForm)
+	return time.Now().In(Loc).AddDate(0, 0, 1).Format(timeForm)
 }
 
 func (to Tomorrow) Name() string {
@@ -330,12 +330,12 @@ func (tw ThisWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
 }
 
 func (nw NextWeek) Beginning() string {
-	n := now.New(time.Now().AddDate(0, 0, 7))
+	n := now.New(time.Now().In(Loc).AddDate(0, 0, 7))
 	return n.BeginningOfWeek().In(Loc).Format(timeForm)
 }
 
 func (nw NextWeek) End() string {
-	n := now.New(time.Now().AddDate(0, 0, 7))
+	n := now.New(time.Now().In(Loc).AddDate(0, 0, 7))
 	return n.EndOfWeek().In(Loc).Format(timeForm)
 }
 
@@ -376,12 +376,12 @@ func (tm ThisMonth) DeliciousFoodMessage(lunches []model.Lunch) string {
 }
 
 func (nm NextMonth) Beginning() string {
-	n := now.New(time.Now().AddDate(0, 1, 0))
+	n := now.New(time.Now().In(Loc).AddDate(0, 1, 0))
 	return n.BeginningOfMonth().In(Loc).Format(timeForm)
 }
 
 func (nm NextMonth) End() string {
-	n := now.New(time.Now().AddDate(0, 1, 0))
+	n := now.New(time.Now().In(Loc).AddDate(0, 1, 0))
 	return n.EndOfMonth().In(Loc).Format(timeForm)
 }
 
