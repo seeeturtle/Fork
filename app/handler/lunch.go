@@ -122,6 +122,8 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = NotText
 	case message.Content == "도와줘":
 		text = help
+	case message.Content == "시작!":
+		text = "자! 어떤 급식이 궁금하니?"
 	case ok && (date != ""):
 		if delicious {
 			text = getResponseText(date, true)
