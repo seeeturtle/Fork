@@ -199,28 +199,33 @@ func JoinWithComma(lunches []model.Lunch) string {
 			names = append(names, food.Name)
 		}
 		dateStr := getDateStr(lunch.Date)
-		str += dateStr + "에는 " + strings.Join(names, ", ") + getPostposition(names[len(names)-1]) + "\n"
+		str += dateStr + strings.Join(names, ", ") + getPostposition(names[len(names)-1]) + ",\n"
 	}
 	return str
 }
 
 func getDateStr(date string) string {
 	dateTime, _ := time.Parse(timeForm, date)
-	dateTime = dateTime.In(Loc)
-	duration := dateTime.Sub(time.Now())
+	dateTime = roundTime(dateTime.In(Loc))
+	now := roundTime(time.Now())
+	duration := dateTime.Sub(now)
 	diffDays := int(duration.Hours() / 24)
 	switch diffDays {
 	case 0:
-		return "오늘"
+		return "오늘은 "
 	case 1:
-		return "내일"
+		return "내일은 "
 	case 2:
-		return "모레"
+		return "모레는 "
 	case 3:
-		return "글피"
+		return "글피는 "
 	default:
-		return fmt.Sprintf("%d월 %d일", dateTime.Month(), dateTime.Day())
+		return fmt.Sprintf("%d월 %d일은 ", dateTime.Month(), dateTime.Day())
 	}
+}
+
+func roundTime(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
 func getPostposition(str string) string {
