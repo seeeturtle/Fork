@@ -45,7 +45,9 @@ type NextMonth struct {
 }
 
 type Response struct {
-	Text string `json:"text"`
+	message struct {
+		text string
+	}
 }
 
 const (
@@ -120,17 +122,17 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case message.Type != "text":
-		response.Text = NotText
+		response.message.text = NotText
 	case message.Content == "도와줘":
-		response.Text = help
+		response.message.text = help
 	case ok && (date != ""):
 		if delicious {
-			response.Text = getResponseText(date, true)
+			response.message.text = getResponseText(date, true)
 		} else {
-			response.Text = getResponseText(date, false)
+			response.message.text = getResponseText(date, false)
 		}
 	default:
-		response.Text = CannotUnderstand
+		response.message.text = CannotUnderstand
 	}
 	respondJSON(w, http.StatusOK, response)
 }
