@@ -84,6 +84,10 @@ func (l *LunchesModel) GetDelicious(startDate, endDate string) ([]Lunch, error) 
 				deliciousLunch.Foods = append(deliciousLunch.Foods, food)
 			}
 		}
+		if len(deliciousLunch.Foods) == 0 {
+			continue
+		}
+		deliciousLunch.Date = lunch.Date
 		deliciousLunches = append(deliciousLunches, deliciousLunch)
 	}
 	return deliciousLunches, nil
