@@ -48,6 +48,12 @@ type NextMonth struct {
 
 type Response map[string]map[string]string
 
+type Message struct {
+	UserKey string `json:"user_key"`
+	Type    string `json:"type"`
+	Content string `json:"content"`
+}
+
 const (
 	NoData           = "급식이 없어"
 	NotText          = "나는 글자 밖에 못 읽어!"
@@ -86,14 +92,11 @@ func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
-	var message struct {
-		UserKey string `json:"user_key"`
-		Type    string `json:"type"`
-		Content string `json:"content"`
-	}
+	now.FirstDayMonday = true
+	log.Out = os.Stdout
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&message); err != nil {
+	if err := decoder.Decode(&m); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -120,14 +123,14 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	문의 기능은 아직... 학교에서 문의해줘.
 	`
-	ok, delicious, date := parseContent(message.Content)
+	ok, delicious, date := parseContent(m.Content)
 
 	switch {
-	case message.Type != "text":
+	case m.Type != "text":
 		text = NotText
-	case message.Content == "도와줘":
+	case m.Content == "도와줘":
 		text = help
-	case message.Content == "시작!":
+	case m.Content == "시작!":
 		text = "자! 어떤 급식이 궁금하니?"
 	case ok && (date != ""):
 		if delicious {
