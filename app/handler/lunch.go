@@ -297,7 +297,7 @@ func (t Today) Name() string {
 
 func (t Today) FoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당"
+	return f + "나온다"
 }
 
 func (t Today) DeliciousFoodMessage(lunches []model.Lunch) string {
@@ -319,7 +319,7 @@ func (to Tomorrow) Name() string {
 
 func (to Tomorrow) FoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당"
+	return f + "나온다"
 }
 
 func (to Tomorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
@@ -341,7 +341,7 @@ func (tw ThisWeek) Name() string {
 
 func (tw ThisWeek) FoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당. 이번주에는 그럭저럭 하네."
+	return f + "나온다. 이번주에는 그럭저럭 하네."
 }
 
 func (tw ThisWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
@@ -365,12 +365,12 @@ func (nw NextWeek) Name() string {
 
 func (nw NextWeek) FoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당. 다음주에는 이런게 나온데."
+	return f + "나온다. 괜찮은데?"
 }
 
 func (nm NextWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온다!!! 다음주가 기대된다!!!"
+	return f + "나온다!!!!"
 }
 
 func (tm ThisMonth) Beginning() string {
@@ -387,12 +387,12 @@ func (tm ThisMonth) Name() string {
 
 func (tm ThisMonth) FoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당. 이번달 급식표임"
+	return f + "나온다.\n이번달 급식임"
 }
 
 func (tm ThisMonth) DeliciousFoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당. 이런건 별표 다섯개 밑줄 쫙쫙!"
+	return f + "나온다.\n기억해둬"
 }
 
 func (nm NextMonth) Beginning() string {
@@ -411,10 +411,10 @@ func (nm NextMonth) Name() string {
 
 func (nm NextMonth) FoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당."
+	return f + "나온다.\n다음달 급식임."
 }
 
 func (nm NextMonth) DeliciousFoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
-	return f + "나온당. 다음달 기대되지?"
+	return f + "나온다.\n다음달 급식도 괜찮은 듯."
 }
