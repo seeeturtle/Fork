@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/jinzhu/now"
 	"github.com/joshua1b/Fork/app/model"
+	"github.com/sirupsen/logrus"
 )
 
 type Scope interface {
@@ -65,9 +67,12 @@ var Scopes = []Scope{
 	NextMonth{name: "다음달"},
 }
 
-var Expected = []string{"맛있", "급식", "점심"}
-
-var Loc, _ = time.LoadLocation(LocForm)
+var (
+	Expected         = []string{"맛있", "급식", "점심"}
+	Loc, _           = time.LoadLocation(LocForm)
+	m        Message = Message{}
+	log              = logrus.New()
+)
 
 func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 	keyboard := struct {
@@ -185,9 +190,13 @@ func parseContent(str string) (ok bool, delicious bool, date string) {
 func getResponseText(scope string, delicious bool) string {
 	for _, s := range Scopes {
 		if scope == s.Name() {
-			return Message(s, delicious)
+			return message(s, delicious)
 		}
 	}
+	log.WithFields(logrus.Fields{
+		"user_key": m.UserKey,
+		"scope":    scope,
+	}).Info("Fields doesn't support")
 	return CannotUnderstand
 }
 
@@ -240,12 +249,16 @@ func getPostposition(str string) string {
 	return defaultStr
 }
 
-func Message(s Scope, delicious bool) string {
+func message(s Scope, delicious bool) string {
 	beginning := s.Beginning()
 	end := s.End()
 	if delicious {
 		deliciousLunches, err := model.Lunches.GetDelicious(beginning, end)
 		if err != nil {
+			log.WithFields(logrus.Fields{
+				"user_key": m.UserKey,
+				"error":    err,
+			}).Warn("error from getting lunches")
 			if beginning == end {
 				return getDateStr(beginning) + " " + NoData
 			}
@@ -255,6 +268,10 @@ func Message(s Scope, delicious bool) string {
 	}
 	lunches, err := model.Lunches.Get(beginning, end)
 	if err != nil {
+		log.WithFields(logrus.Fields{
+			"user_key": m.UserKey,
+			"error":    err,
+		}).Warn("error from getting lunches")
 		if beginning == end {
 			return getDateStr(beginning) + " " + NoData
 		}
