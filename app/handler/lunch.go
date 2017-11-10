@@ -131,7 +131,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	언제 급식을 원하는 건지,
 	맛있는 급식을 원하는 건지 모든 급식을 원하는 건지 알려줘야해.
 
-	가능한 범위는 오늘, 내일, 이번주, 다음주, 이번달, 다음달이야.
+	가능한 범위는 오늘, 내일, 모레, 글피, 이번주, 다음주, 다다음주, 이번달, 다음달이야.
 
 	꼭 점심, 급식이라는 단어는 있어야해.
 
@@ -155,6 +155,8 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = "자! 어떤 급식이 궁금하니?"
 	case ok && (date != ""):
 		text = getResponseText(date, delicious)
+	case ok && (date == ""):
+		text = "언제 급식을 원하는 거야?"
 	default:
 		text = CannotUnderstand
 	}
@@ -163,16 +165,16 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, response)
 }
 
-func parseContent(str string) (ok bool, delicious bool, date string) {
+func parseContent(str string) (ok, delicious bool, date string) {
 	splitted := strings.Split(str, " ")
-	re := regexp.MustCompile(`[\d]+년[\d]+월[\d]+일`)
+	re := regexp.MustCompile(`[\d]+월[\d]+일`)
 	for _, w := range splitted {
 		d := re.FindString(w)
 		switch {
 		case d != "":
 			if date == "" {
-				t, _ := time.Parse("2006년1월2일", d)
-				date = t.Format(timeForm)
+				t, _ := time.Parse("2006년1월2일", time.Now().In(Loc).Format("2006년")+d)
+				date = "날짜" + t.Format(timeForm)
 			}
 		case strings.Contains(w, "오늘"):
 			if date == "" {
@@ -225,7 +227,7 @@ func getResponseText(scope string, delicious bool) string {
 	for _, s := range Scopes {
 		if strings.Contains(scope, s.Name()) {
 			if s.Name() == "날짜" {
-				s.(*Day).date = scope
+				s.(*Day).date = string([]rune(scope)[2:])
 			}
 			return message(s, delicious)
 		}
