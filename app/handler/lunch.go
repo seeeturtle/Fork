@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -22,6 +23,11 @@ type Scope interface {
 	DeliciousFoodMessage([]model.Lunch) string
 }
 
+type Day struct {
+	name string
+	date string
+}
+
 type Today struct {
 	name string
 }
@@ -30,7 +36,19 @@ type Tomorrow struct {
 	name string
 }
 
+type Nextomorrow struct {
+	name string
+}
+
+type Threemorrow struct {
+	name string
+}
+
 type ThisWeek struct {
+	name string
+}
+
+type WeekAfterNext struct {
 	name string
 }
 
@@ -65,8 +83,12 @@ const timeForm string = "20060102"
 const LocForm string = "Asia/Seoul"
 
 var Scopes = []Scope{
+	&Day{name: "날짜"},
 	Today{name: "오늘"},
 	Tomorrow{name: "내일"},
+	Nextomorrow{name: "모레"},
+	Threemorrow{name: "글피"},
+	WeekAfterNext{name: "다다음주"},
 	NextWeek{name: "다음주"},
 	ThisWeek{name: "이번주"},
 	ThisMonth{name: "이번달"},
@@ -74,10 +96,9 @@ var Scopes = []Scope{
 }
 
 var (
-	Expected         = []string{"맛있", "급식", "점심"}
-	Loc, _           = time.LoadLocation(LocForm)
-	m        Message = Message{}
-	log              = logrus.New()
+	Loc, _ = time.LoadLocation(LocForm)
+	m      = Message{}
+	log    = logrus.New()
 )
 
 func GetKeyboard(w http.ResponseWriter, r *http.Request) {
@@ -133,11 +154,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	case m.Content == "시작!":
 		text = "자! 어떤 급식이 궁금하니?"
 	case ok && (date != ""):
-		if delicious {
-			text = getResponseText(date, true)
-		} else {
-			text = getResponseText(date, false)
-		}
+		text = getResponseText(date, delicious)
 	default:
 		text = CannotUnderstand
 	}
@@ -147,43 +164,57 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseContent(str string) (ok bool, delicious bool, date string) {
-	expected := make(map[string]bool, len(Expected))
-	for _, e := range Expected {
-		expected[e] = false
-	}
-	for _, s := range Scopes {
-		expected[s.Name()] = false
-	}
 	splitted := strings.Split(str, " ")
+	re := regexp.MustCompile(`[\d]+년[\d]+월[\d]+일`)
 	for _, w := range splitted {
-		for k := range expected {
-			if strings.Contains(w, k) {
-				expected[k] = true
+		d := re.FindString(w)
+		switch {
+		case d != "":
+			if date == "" {
+				t, _ := time.Parse("2006년1월2일", d)
+				date = t.Format(timeForm)
 			}
-		}
-	}
-	for k, b := range expected {
-		if !b {
-			continue
-		}
-		switch k {
-		case "점심":
+		case strings.Contains(w, "오늘"):
+			if date == "" {
+				date = "오늘"
+			}
+		case strings.Contains(w, "내일"):
+			if date == "" {
+				date = "내일"
+			}
+		case strings.Contains(w, "모레"):
+			if date == "" {
+				date = "모레"
+			}
+		case strings.Contains(w, "글피"):
+			if date == "" {
+				date = "글피"
+			}
+		case strings.Contains(w, "이번주"):
+			if date == "" {
+				date = "이번주"
+			}
+		case strings.Contains(w, "다다음주"):
+			if date == "" {
+				date = "다다음주"
+			}
+		case strings.Contains(w, "다음주"):
+			if date == "" {
+				date = "다음주"
+			}
+		case strings.Contains(w, "이번달"):
+			if date == "" {
+				date = "이번달"
+			}
+		case strings.Contains(w, "다음달"):
+			if date == "" {
+				date = "다음달"
+			}
+		case strings.Contains(w, "급식"):
 			ok = true
-		case "급식":
+		case strings.Contains(w, "점심"):
 			ok = true
-		case "오늘":
-			date = k
-		case "내일":
-			date = k
-		case "다음주":
-			date = k
-		case "이번주":
-			date = k
-		case "이번달":
-			date = k
-		case "다음달":
-			date = k
-		case "맛있":
+		case strings.Contains(w, "맛있"):
 			delicious = true
 		}
 	}
@@ -192,7 +223,10 @@ func parseContent(str string) (ok bool, delicious bool, date string) {
 
 func getResponseText(scope string, delicious bool) string {
 	for _, s := range Scopes {
-		if scope == s.Name() {
+		if strings.Contains(scope, s.Name()) {
+			if s.Name() == "날짜" {
+				s.(*Day).date = scope
+			}
 			return message(s, delicious)
 		}
 	}
@@ -283,6 +317,28 @@ func message(s Scope, delicious bool) string {
 	return s.FoodMessage(lunches)
 }
 
+func (d *Day) Beginning() string {
+	return d.date
+}
+
+func (d *Day) End() string {
+	return d.date
+}
+
+func (d Day) Name() string {
+	return d.name
+}
+
+func (d Day) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다"
+}
+
+func (d Day) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다!!!"
+}
+
 func (t Today) Beginning() string {
 	return time.Now().In(Loc).Format(timeForm)
 }
@@ -327,6 +383,50 @@ func (to Tomorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!!"
 }
 
+func (nt Nextomorrow) Beginning() string {
+	return time.Now().AddDate(0, 0, 2).In(Loc).Format(timeForm)
+}
+
+func (nt Nextomorrow) End() string {
+	return time.Now().AddDate(0, 0, 2).In(Loc).Format(timeForm)
+}
+
+func (nt Nextomorrow) Name() string {
+	return nt.name
+}
+
+func (nt Nextomorrow) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다"
+}
+
+func (nt Nextomorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다!!!"
+}
+
+func (tm Threemorrow) Beginning() string {
+	return time.Now().AddDate(0, 0, 3).In(Loc).Format(timeForm)
+}
+
+func (tm Threemorrow) End() string {
+	return time.Now().AddDate(0, 0, 3).In(Loc).Format(timeForm)
+}
+
+func (tm Threemorrow) Name() string {
+	return tm.name
+}
+
+func (tm Threemorrow) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다"
+}
+
+func (tm Threemorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다!!!"
+}
+
 func (tw ThisWeek) Beginning() string {
 	return now.BeginningOfWeek().In(Loc).Format(timeForm)
 }
@@ -347,6 +447,30 @@ func (tw ThisWeek) FoodMessage(lunches []model.Lunch) string {
 func (tw ThisWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
 	f := JoinWithComma(lunches)
 	return f + "나온다!!!! 이번주에 맛있는게 많다!"
+}
+
+func (wn WeekAfterNext) Beginning() string {
+	n := now.New(time.Now().In(Loc).AddDate(0, 0, 14))
+	return n.BeginningOfWeek().In(Loc).Format(timeForm)
+}
+
+func (wn WeekAfterNext) End() string {
+	n := now.New(time.Now().In(Loc).AddDate(0, 0, 14))
+	return n.EndOfWeek().In(Loc).Format(timeForm)
+}
+
+func (wn WeekAfterNext) Name() string {
+	return wn.name
+}
+
+func (wn WeekAfterNext) FoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다"
+}
+
+func (wn WeekAfterNext) DeliciousFoodMessage(lunches []model.Lunch) string {
+	f := JoinWithComma(lunches)
+	return f + "나온다!!!"
 }
 
 func (nw NextWeek) Beginning() string {
