@@ -239,13 +239,18 @@ func getResponseText(scope string, delicious bool) string {
 
 func JoinWithComma(lunches []model.Lunch) string {
 	var str string
-	for _, lunch := range lunches {
+	for i, lunch := range lunches {
 		names := []string{}
 		for _, food := range lunch.Foods {
 			names = append(names, food.Name)
 		}
 		dateStr := getDateStr(lunch.Date)
-		str += dateStr + strings.Join(names, ", ") + getPostposition(names[len(names)-1]) + ",\n"
+		str += dateStr + strings.Join(names, ", ") + getPostposition(names[len(names)-1])
+		if i != len(lunches)-1 {
+			str += ",\n"
+		} else {
+			str += " "
+		}
 	}
 	return str
 }
