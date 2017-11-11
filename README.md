@@ -28,6 +28,12 @@ Warning
 --------
 [Spoon](https://github.com/joshua1b/Spoon)로 미리 데이터베이스를 초기화 해야합니다.
 
+Thanks
+-------
+@mingrammer님
+https://github.com/mingrammer/go-todo-rest-api-example
+멋진 예제를 작성해주셔서 감사합니다! 이 프로젝트에 많은 도움을 주셨습니다.
+
 문의
 --------
 issue에 올려주시기를 바랍니다.
