@@ -144,7 +144,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	문의 기능은 아직... 학교에서 문의해줘.
 	`
-	ok, delicious, date := parseContent(m.Content)
+	ok, delicious, s, date := parseContent(m.Content)
 
 	switch {
 	case m.Type != "text":
@@ -153,6 +153,8 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = help
 	case m.Content == "시작!":
 		text = "자! 어떤 급식이 궁금하니?"
+	case ok && s:
+		text = date + " 급식을 원하는거야?"
 	case ok && (date != ""):
 		text = getResponseText(date, delicious)
 	case ok && (date == ""):
@@ -165,7 +167,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, response)
 }
 
-func parseContent(str string) (ok, delicious bool, date string) {
+func parseContent(str string) (ok, delicious, s bool, date string) {
 	splitted := strings.Split(str, " ")
 	re := regexp.MustCompile(`[\d]+월[\d]+일`)
 	for _, w := range splitted {
@@ -212,6 +214,51 @@ func parseContent(str string) (ok, delicious bool, date string) {
 			if date == "" {
 				date = "다음달"
 			}
+		case similar([]rune("오늘"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "오늘"
+				s = true
+			}
+		case similar([]rune("내일"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "내일"
+				s = true
+			}
+		case similar([]rune("모레"), []rune(w)) >= 0.42:
+			if date == "" {
+				date = "모레"
+				s = true
+			}
+		case similar([]rune("글피"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "글피"
+				s = true
+			}
+		case similar([]rune("이번주"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "이번주"
+				s = true
+			}
+		case similar([]rune("다음주"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "다음주"
+				s = true
+			}
+		case similar([]rune("다다음주"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "다다음주"
+				s = true
+			}
+		case similar([]rune("이번달"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "이번달"
+				s = true
+			}
+		case similar([]rune("다음달"), []rune(w)) >= 0.5:
+			if date == "" {
+				date = "다음달"
+				s = true
+			}
 		case strings.Contains(w, "급식"):
 			ok = true
 		case strings.Contains(w, "점심"):
@@ -221,6 +268,82 @@ func parseContent(str string) (ok, delicious bool, date string) {
 		}
 	}
 	return
+}
+
+func similar(a, b []rune) float64 {
+	intersection := make([]int, 0)
+	union := make([]int, 0)
+	var longer, shorter []int
+	sliceA := make([]int, 0)
+	for _, r := range a {
+		sliceA = append(sliceA, seperate(r)...)
+	}
+	sliceA = cutByTwo(sliceA)
+	sliceB := make([]int, 0)
+	for _, r := range b {
+		sliceB = append(sliceB, seperate(r)...)
+	}
+	sliceB = cutByTwo(sliceB)
+	if len(sliceA) >= len(sliceB) {
+		longer = sliceA
+		shorter = sliceB
+	} else {
+		longer = sliceB
+		shorter = sliceA
+	}
+	for _, i := range shorter {
+		if !inIntSlice(i, union) {
+			union = append(union, i)
+		}
+		for _, j := range longer {
+			if !inIntSlice(j, union) {
+				union = append(union, j)
+			}
+			if i == j && !inIntSlice(i, intersection) {
+				intersection = append(intersection, i)
+			}
+		}
+	}
+	intersectionLen := len(intersection)
+	unionLen := len(union)
+	return float64(intersectionLen) / float64(unionLen)
+}
+
+func inIntSlice(a int, b []int) bool {
+	for _, i := range b {
+		if a == i {
+			return true
+		}
+	}
+	return false
+}
+
+func seperate(a rune) []int {
+	var slice []int
+	code := int(a) - 44032
+	jongSeong := code % 28
+	jungSeong := ((code - jongSeong) / 28) % 21
+	choSeong := ((code-jongSeong)/28 - jungSeong) / 21
+	slice = append(slice, choSeong)
+	slice = append(slice, jungSeong)
+	if jongSeong != 0 {
+		slice = append(slice, jongSeong)
+	}
+
+	return slice
+}
+
+func cutByTwo(a []int) []int {
+	var result []int
+	result = append(result, (a[0]+3)*30)
+	for index, i := range a {
+		if index == len(a)-1 {
+			result = append(result, 100*(i+3))
+			continue
+		}
+		result = append(result, (i+3)*a[index+1])
+	}
+	return result
 }
 
 func getResponseText(scope string, delicious bool) string {
