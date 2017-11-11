@@ -30,7 +30,7 @@ Warning
 
 Thanks
 -------
-@ming님
+[@mingrammer](https://github.com/mingrammer/)님
 https://github.com/mingrammer/go-todo-rest-api-example
 멋진 예제를 작성해주셔서 감사합니다! 이 프로젝트에 많은 도움을 주셨습니다.
 
