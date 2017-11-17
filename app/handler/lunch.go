@@ -82,6 +82,39 @@ const timeForm string = "20060102"
 
 const LocForm string = "Asia/Seoul"
 
+var slangs = []string{
+	"개",
+	"걸레",
+	"년",
+	"놈",
+	"느금마",
+	"닥쳐",
+	"등신",
+	"또라이",
+	"미친",
+	"멍청",
+	"병신",
+	"새끼",
+	"썅",
+	"시발",
+	"씨발",
+	"씨팔",
+	"씨발",
+	"썖",
+	"씹",
+	"염병",
+	"옘병",
+	"좆",
+	"좃",
+	"좇",
+	"지랄",
+	"창",
+	"호로",
+	"후레",
+	"호구",
+	"후장",
+}
+
 var Scopes = []Scope{
 	&Day{name: "날짜"},
 	Today{name: "오늘"},
@@ -144,7 +177,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 
 	문의 기능은 아직... 학교에서 문의해줘.
 	`
-	ok, delicious, s, date := parseContent(m.Content)
+	ok, delicious, similar, slang, date := parseContent(m.Content)
 
 	switch {
 	case m.Type != "text":
@@ -153,14 +186,18 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = help
 	case m.Content == "시작!":
 		text = "자! 어떤 급식이 궁금하니?"
-	case ok && s && !delicious:
+	case (ok || delicious || date != "") && slang:
+		text = "흠... 욕하는거는 지 물어보는지 모르겠다..."
+	case ok && similar && !delicious:
 		text = date + ` 급식을 원하는거야? 그러면 "` + date + ` 급식" 이라고 말해줘.`
-	case ok && s && delicious:
+	case ok && similar && delicious:
 		text = date + ` 맛있는 급식을 원하는거야? 그러면 "` + date + ` 맛있는 급식" 이라고 말해줘.`
 	case ok && (date != ""):
 		text = getResponseText(date, delicious)
 	case ok && (date == ""):
 		text = "언제 급식을 원하는 거야?"
+	case !(ok || delicious || date != "") && slang:
+		text = "내가 아무리 멍청해도 이정도 욕은 알아들어!"
 	default:
 		text = CannotUnderstand
 	}
@@ -169,7 +206,7 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, response)
 }
 
-func parseContent(str string) (ok, delicious, s bool, date string) {
+func parseContent(str string) (ok, delicious, similar, slang bool, date string) {
 	splitted := strings.Split(str, " ")
 	re := regexp.MustCompile(`[\d]+월[\d]+일`)
 	for _, w := range splitted {
@@ -216,50 +253,50 @@ func parseContent(str string) (ok, delicious, s bool, date string) {
 			if date == "" {
 				date = "다음달"
 			}
-		case similar([]rune("오늘"), []rune(w)) >= 0.5:
+		case similarity([]rune("오늘"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "오늘"
-				s = true
+				similar = true
 			}
-		case similar([]rune("내일"), []rune(w)) >= 0.5:
+		case similarity([]rune("내일"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "내일"
-				s = true
+				similar = true
 			}
-		case similar([]rune("모레"), []rune(w)) >= 0.42:
+		case similarity([]rune("모레"), []rune(w)) >= 0.42:
 			if date == "" {
 				date = "모레"
-				s = true
+				similar = true
 			}
-		case similar([]rune("글피"), []rune(w)) >= 0.5:
+		case similarity([]rune("글피"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "글피"
-				s = true
+				similar = true
 			}
-		case similar([]rune("이번주"), []rune(w)) >= 0.5:
+		case similarity([]rune("이번주"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "이번주"
-				s = true
+				similar = true
 			}
-		case similar([]rune("다음주"), []rune(w)) >= 0.5:
+		case similarity([]rune("다음주"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "다음주"
-				s = true
+				similar = true
 			}
-		case similar([]rune("다다음주"), []rune(w)) >= 0.5:
+		case similarity([]rune("다다음주"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "다다음주"
-				s = true
+				similar = true
 			}
-		case similar([]rune("이번달"), []rune(w)) >= 0.5:
+		case similarity([]rune("이번달"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "이번달"
-				s = true
+				similar = true
 			}
-		case similar([]rune("다음달"), []rune(w)) >= 0.5:
+		case similarity([]rune("다음달"), []rune(w)) >= 0.5:
 			if date == "" {
 				date = "다음달"
-				s = true
+				similar = true
 			}
 		case strings.Contains(w, "급식"):
 			ok = true
@@ -267,12 +304,14 @@ func parseContent(str string) (ok, delicious, s bool, date string) {
 			ok = true
 		case strings.Contains(w, "맛있"):
 			delicious = true
+		case slangSimilarity(w) >= 0.3:
+			slang = true
 		}
 	}
 	return
 }
 
-func similar(a, b []rune) float64 {
+func similarity(a, b []rune) float64 {
 	intersection := make([]int, 0)
 	union := make([]int, 0)
 	var longer, shorter []int
@@ -346,6 +385,23 @@ func cutByTwo(a []int) []int {
 		result = append(result, (i+3)*a[index+1])
 	}
 	return result
+}
+
+func slangSimilarity(str string) float64 {
+	var preprocessed string
+	var similaritys []float64
+	re := regexp.MustCompile("[^가-힣]")
+	preprocessed = re.ReplaceAllString(str, "")
+	for _, s := range slangs {
+		similaritys = append(similaritys, similarity([]rune(s), []rune(preprocessed)))
+	}
+	var max float64
+	for _, s := range similaritys {
+		if s >= max {
+			max = s
+		}
+	}
+	return max
 }
 
 func getResponseText(scope string, delicious bool) string {
