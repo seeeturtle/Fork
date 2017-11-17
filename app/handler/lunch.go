@@ -298,13 +298,17 @@ func parseContent(str string) (ok, delicious, similar, slang bool, date string) 
 				date = "다음달"
 				similar = true
 			}
+		}
+		switch {
 		case strings.Contains(w, "급식"):
 			ok = true
 		case strings.Contains(w, "점심"):
 			ok = true
-		case strings.Contains(w, "맛있"):
+		}
+		if strings.Contains(w, "맛있") {
 			delicious = true
-		case slangSimilarity(w) >= 0.3:
+		}
+		if slangSimilarity(w) >= 0.3 {
 			slang = true
 		}
 	}
