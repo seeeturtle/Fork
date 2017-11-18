@@ -73,7 +73,8 @@ type Message struct {
 }
 
 const (
-	NoData           = "급식이 없어"
+	Error            = "오류가 났어ㅠㅠ"
+	NoData           = "급식은 없어"
 	NotText          = "나는 글자 밖에 못 읽어!"
 	CannotUnderstand = "뭐라는 거지... 미안, 내가 좀 멍청해."
 )
@@ -186,8 +187,8 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = help
 	case m.Content == "시작!":
 		text = "자! 어떤 급식이 궁금하니?"
-	case (ok || delicious || date != "") && slang:
-		text = "흠... 욕하는거는 지 물어보는지 모르겠다..."
+	case slang:
+		text = "내가 아무리 멍청해도 욕은 알아들어!"
 	case ok && similar && !delicious:
 		text = date + ` 급식을 원하는거야? 그러면 "` + date + ` 급식" 이라고 말해줘.`
 	case ok && similar && delicious:
@@ -196,8 +197,6 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = getResponseText(date, delicious)
 	case ok && (date == ""):
 		text = "언제 급식을 원하는 거야?"
-	case !(ok || delicious || date != "") && slang:
-		text = "내가 아무리 멍청해도 이정도 욕은 알아들어!"
 	default:
 		text = CannotUnderstand
 	}
@@ -308,7 +307,7 @@ func parseContent(str string) (ok, delicious, similar, slang bool, date string) 
 		if strings.Contains(w, "맛있") {
 			delicious = true
 		}
-		if slangSimilarity(w) >= 0.3 {
+		if slangSimilarity(w) >= 0.38 {
 			slang = true
 		}
 	}
@@ -426,20 +425,64 @@ func getResponseText(scope string, delicious bool) string {
 
 func JoinWithComma(lunches []model.Lunch) string {
 	var str string
-	for i, lunch := range lunches {
+	if len(lunches) > 1 {
+		for i, lunch := range lunches {
+			names := []string{}
+			for _, food := range lunch.Foods {
+				names = append(names, food.Name)
+			}
+			dateStr := getDatesStr(lunch.Date)
+			str += dateStr + strings.Join(names, ", ") + getPostposition(names[len(names)-1])
+			if i != len(lunches)-1 {
+				str += ",\n"
+			} else {
+				str += " "
+			}
+		}
+	} else if len(lunches) == 1 {
 		names := []string{}
-		for _, food := range lunch.Foods {
+		for _, food := range lunches[0].Foods {
 			names = append(names, food.Name)
 		}
-		dateStr := getDateStr(lunch.Date)
-		str += dateStr + strings.Join(names, ", ") + getPostposition(names[len(names)-1])
-		if i != len(lunches)-1 {
-			str += ",\n"
-		} else {
-			str += " "
-		}
+		dateStr := getDateStr(lunches[0].Date)
+		str = dateStr + strings.Join(names, ", ") + getPostposition(names[len(names)-1])
 	}
 	return str
+}
+
+func getDatesStr(date string) string {
+	var weekDays [7]string = [7]string{
+		"일요일",
+		"월요일",
+		"화요일",
+		"수요일",
+		"목요일",
+		"금요일",
+		"토요일",
+	}
+	dateTime, _ := time.Parse(timeForm, date)
+	dateTime = roundTime(dateTime.In(Loc))
+	n := time.Now().In(Loc)
+	diffWeeks := int(now.New(dateTime).BeginningOfWeek().Sub(now.New(n).BeginningOfWeek())) / (int(time.Hour) * 24 * 7)
+	weekDay := weekDays[int(dateTime.Weekday())]
+	switch {
+	case diffWeeks == -3:
+		return "3주전 " + weekDay + "은 "
+	case diffWeeks == -2:
+		return "저저번주 " + weekDay + "은 "
+	case diffWeeks == -1:
+		return "저번주 " + weekDay + "은 "
+	case diffWeeks == 0:
+		return "이번주 " + weekDay + "은"
+	case diffWeeks == 1:
+		return "다음주 " + weekDay + "은 "
+	case diffWeeks == 2:
+		return "다다음주 " + weekDay + "은 "
+	case diffWeeks == 3:
+		return "3주후 " + weekDay + "은 "
+	default:
+		return fmt.Sprintf("%d월 %d일은 ", dateTime.Month(), dateTime.Day())
+	}
 }
 
 func getDateStr(date string) string {
@@ -483,28 +526,40 @@ func message(s Scope, delicious bool) string {
 	end := s.End()
 	if delicious {
 		deliciousLunches, err := model.Lunches.GetDelicious(beginning, end)
+		if len(deliciousLunches) == 0 {
+			switch s.(type) {
+			case *Day:
+				dateTime, _ := time.Parse(timeForm, s.(*Day).date)
+				return fmt.Sprintf("%d월 %d일 ", dateTime.Month(), dateTime.Day()) + NoData
+			default:
+				return s.Name() + " " + NoData
+			}
+		}
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"user_key": m.UserKey,
 				"error":    err,
 			}).Warn("error from getting lunches")
-			if beginning == end {
-				return getDateStr(beginning) + " " + NoData
-			}
-			return NoData
+			return Error
 		}
 		return s.DeliciousFoodMessage(deliciousLunches)
 	}
 	lunches, err := model.Lunches.Get(beginning, end)
+	if len(lunches) == 0 {
+		switch s.(type) {
+		case *Day:
+			dateTime, _ := time.Parse(timeForm, s.(*Day).date)
+			return fmt.Sprintf("%d월 %d일 ", dateTime.Month(), dateTime.Day()) + NoData
+		default:
+			return s.Name() + " " + NoData
+		}
+	}
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"user_key": m.UserKey,
 			"error":    err,
 		}).Warn("error from getting lunches")
-		if beginning == end {
-			return getDateStr(beginning) + " " + NoData
-		}
-		return NoData
+		return Error
 	}
 	return s.FoodMessage(lunches)
 }
