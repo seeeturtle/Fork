@@ -209,6 +209,9 @@ func parseContent(str string) (ok, delicious, similar, slang bool, date string) 
 	splitted := strings.Split(str, " ")
 	re := regexp.MustCompile(`[\d]+월[\d]+일`)
 	for _, w := range splitted {
+		if w == "" {
+			continue
+		}
 		d := re.FindString(w)
 		switch {
 		case d != "":
