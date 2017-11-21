@@ -348,7 +348,7 @@ func getDatesStr(date string) string {
 	case diffWeeks == -1:
 		return "저번주 " + weekDay + "은 "
 	case diffWeeks == 0:
-		return "이번주 " + weekDay + "은"
+		return "이번주 " + weekDay + "은 "
 	case diffWeeks == 1:
 		return "다음주 " + weekDay + "은 "
 	case diffWeeks == 2:
