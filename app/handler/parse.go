@@ -111,7 +111,7 @@ func parseContent(str string) (ok, delicious, similar, slang bool, date string) 
 		if strings.Contains(w, "맛있") {
 			delicious = true
 		}
-		if slangSimilarity(w) >= 0.38 {
+		if slangSimilarity(w) >= 0.3 {
 			slang = true
 		}
 	}
@@ -226,6 +226,14 @@ func slangSimilarity(str string) float64 {
 	var similaritys []float64
 	re := regexp.MustCompile("[^가-힣]")
 	preprocessed = re.ReplaceAllString(str, "")
+	for _, s := range Scopes {
+		if s.Name() == "날짜" {
+			continue
+		}
+		if similarity([]rune(preprocessed), []rune(s.Name())) > 0.4 {
+			return 0
+		}
+	}
 	for _, s := range slangs {
 		similaritys = append(similaritys, similarity([]rune(s), []rune(preprocessed)))
 	}
