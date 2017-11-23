@@ -18,7 +18,7 @@ func parseContent(str string) (ok, delicious, similar, slang bool, date string) 
 		case d != "":
 			if date == "" {
 				t, _ := time.Parse("2006년1월2일", time.Now().In(loc).Format("2006년")+d)
-				date = "날짜" + t.Format(timeForm)
+				date = "날짜" + t.Format("20060102")
 			}
 		case strings.Contains(w, "오늘"):
 			if date == "" {
@@ -124,12 +124,12 @@ func similarity(a, b []rune) float64 {
 	var longer, shorter []int
 	sliceA := make([]int, 0)
 	for _, r := range a {
-		sliceA = append(sliceA, seperate(r)...)
+		sliceA = append(sliceA, separate(r)...)
 	}
 	sliceA = cutByTwo(sliceA)
 	sliceB := make([]int, 0)
 	for _, r := range b {
-		sliceB = append(sliceB, seperate(r)...)
+		sliceB = append(sliceB, separate(r)...)
 	}
 	sliceB = cutByTwo(sliceB)
 	if len(sliceA) >= len(sliceB) {
@@ -166,7 +166,7 @@ func inIntSlice(a int, b []int) bool {
 	return false
 }
 
-func seperate(a rune) []int {
+func separate(a rune) []int {
 	var slice []int
 	code := int(a) - 44032
 	jongSeong := code % 28

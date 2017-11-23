@@ -11,8 +11,8 @@ import (
 )
 
 type Scope interface {
-	Beginning() string
-	End() string
+	Beginning() time.Time
+	End() time.Time
 	Name() string
 	FoodMessage([]model.Lunch) string
 	DeliciousFoodMessage([]model.Lunch) string
@@ -20,7 +20,7 @@ type Scope interface {
 
 type Day struct {
 	name string
-	date string
+	date time.Time
 }
 
 type Today struct {
@@ -72,11 +72,11 @@ var Scopes = []Scope{
 	NextMonth{name: "다음달"},
 }
 
-func (d *Day) Beginning() string {
+func (d *Day) Beginning() time.Time {
 	return d.date
 }
 
-func (d *Day) End() string {
+func (d *Day) End() time.Time {
 	return d.date
 }
 
@@ -94,12 +94,12 @@ func (d Day) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!"
 }
 
-func (t Today) Beginning() string {
-	return time.Now().In(loc).Format(timeForm)
+func (t Today) Beginning() time.Time {
+	return time.Now().In(loc)
 }
 
-func (t Today) End() string {
-	return time.Now().In(loc).Format(timeForm)
+func (t Today) End() time.Time {
+	return time.Now().In(loc)
 }
 
 func (t Today) Name() string {
@@ -116,12 +116,12 @@ func (t Today) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!!"
 }
 
-func (to Tomorrow) Beginning() string {
-	return time.Now().In(loc).AddDate(0, 0, 1).Format(timeForm)
+func (to Tomorrow) Beginning() time.Time {
+	return time.Now().In(loc).AddDate(0, 0, 1)
 }
 
-func (to Tomorrow) End() string {
-	return time.Now().In(loc).AddDate(0, 0, 1).Format(timeForm)
+func (to Tomorrow) End() time.Time {
+	return time.Now().In(loc).AddDate(0, 0, 1)
 }
 
 func (to Tomorrow) Name() string {
@@ -138,12 +138,12 @@ func (to Tomorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!!"
 }
 
-func (nt Nextomorrow) Beginning() string {
-	return time.Now().AddDate(0, 0, 2).In(loc).Format(timeForm)
+func (nt Nextomorrow) Beginning() time.Time {
+	return time.Now().In(loc).AddDate(0, 0, 2)
 }
 
-func (nt Nextomorrow) End() string {
-	return time.Now().AddDate(0, 0, 2).In(loc).Format(timeForm)
+func (nt Nextomorrow) End() time.Time {
+	return time.Now().In(loc).AddDate(0, 0, 2)
 }
 
 func (nt Nextomorrow) Name() string {
@@ -160,12 +160,12 @@ func (nt Nextomorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!"
 }
 
-func (tm Threemorrow) Beginning() string {
-	return time.Now().AddDate(0, 0, 3).In(loc).Format(timeForm)
+func (tm Threemorrow) Beginning() time.Time {
+	return time.Now().In(loc).AddDate(0, 0, 3)
 }
 
-func (tm Threemorrow) End() string {
-	return time.Now().AddDate(0, 0, 3).In(loc).Format(timeForm)
+func (tm Threemorrow) End() time.Time {
+	return time.Now().In(loc).AddDate(0, 0, 3)
 }
 
 func (tm Threemorrow) Name() string {
@@ -182,12 +182,12 @@ func (tm Threemorrow) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!"
 }
 
-func (tw ThisWeek) Beginning() string {
-	return now.BeginningOfWeek().In(loc).Format(timeForm)
+func (tw ThisWeek) Beginning() time.Time {
+	return now.New(time.Now().In(loc)).BeginningOfWeek()
 }
 
-func (tw ThisWeek) End() string {
-	return now.EndOfWeek().In(loc).Format(timeForm)
+func (tw ThisWeek) End() time.Time {
+	return now.New(time.Now().In(loc)).EndOfWeek()
 }
 
 func (tw ThisWeek) Name() string {
@@ -204,14 +204,14 @@ func (tw ThisWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!! 이번주에 맛있는게 많다!"
 }
 
-func (wn WeekAfterNext) Beginning() string {
+func (wn WeekAfterNext) Beginning() time.Time {
 	n := now.New(time.Now().In(loc).AddDate(0, 0, 14))
-	return n.BeginningOfWeek().In(loc).Format(timeForm)
+	return n.BeginningOfWeek()
 }
 
-func (wn WeekAfterNext) End() string {
+func (wn WeekAfterNext) End() time.Time {
 	n := now.New(time.Now().In(loc).AddDate(0, 0, 14))
-	return n.EndOfWeek().In(loc).Format(timeForm)
+	return n.EndOfWeek()
 }
 
 func (wn WeekAfterNext) Name() string {
@@ -228,14 +228,14 @@ func (wn WeekAfterNext) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!"
 }
 
-func (nw NextWeek) Beginning() string {
+func (nw NextWeek) Beginning() time.Time {
 	n := now.New(time.Now().In(loc).AddDate(0, 0, 7))
-	return n.BeginningOfWeek().In(loc).Format(timeForm)
+	return n.BeginningOfWeek()
 }
 
-func (nw NextWeek) End() string {
+func (nw NextWeek) End() time.Time {
 	n := now.New(time.Now().In(loc).AddDate(0, 0, 7))
-	return n.EndOfWeek().In(loc).Format(timeForm)
+	return n.EndOfWeek()
 }
 
 func (nw NextWeek) Name() string {
@@ -252,12 +252,12 @@ func (nm NextWeek) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다!!!!"
 }
 
-func (tm ThisMonth) Beginning() string {
-	return now.BeginningOfMonth().In(loc).Format(timeForm)
+func (tm ThisMonth) Beginning() time.Time {
+	return now.New(time.Now().In(loc)).BeginningOfMonth()
 }
 
-func (tm ThisMonth) End() string {
-	return now.EndOfMonth().In(loc).Format(timeForm)
+func (tm ThisMonth) End() time.Time {
+	return now.New(time.Now().In(loc)).EndOfWeek()
 }
 
 func (tm ThisMonth) Name() string {
@@ -274,14 +274,14 @@ func (tm ThisMonth) DeliciousFoodMessage(lunches []model.Lunch) string {
 	return f + "나온다.\n기억해둬"
 }
 
-func (nm NextMonth) Beginning() string {
+func (nm NextMonth) Beginning() time.Time {
 	n := now.New(time.Now().In(loc).AddDate(0, 1, 0))
-	return n.BeginningOfMonth().In(loc).Format(timeForm)
+	return n.BeginningOfMonth()
 }
 
-func (nm NextMonth) End() string {
+func (nm NextMonth) End() time.Time {
 	n := now.New(time.Now().In(loc).AddDate(0, 1, 0))
-	return n.EndOfMonth().In(loc).Format(timeForm)
+	return n.EndOfMonth()
 }
 
 func (nm NextMonth) Name() string {
@@ -325,7 +325,7 @@ func JoinWithComma(lunches []model.Lunch) string {
 	return str
 }
 
-func getDatesStr(date string) string {
+func getDatesStr(date time.Time) string {
 	var weekDays [7]string = [7]string{
 		"일요일",
 		"월요일",
@@ -335,9 +335,8 @@ func getDatesStr(date string) string {
 		"금요일",
 		"토요일",
 	}
-	dateTime, _ := time.Parse(timeForm, date)
-	dateTime = roundTime(dateTime.In(loc))
-	n := time.Now().In(loc)
+	dateTime := date
+	n := time.Now()
 	diffWeeks := int(now.New(dateTime).BeginningOfWeek().Sub(now.New(n).BeginningOfWeek())) / (int(time.Hour) * 24 * 7)
 	weekDay := weekDays[int(dateTime.Weekday())]
 	switch {
@@ -360,9 +359,8 @@ func getDatesStr(date string) string {
 	}
 }
 
-func getDateStr(date string) string {
-	dateTime, _ := time.Parse(timeForm, date)
-	dateTime = roundTime(dateTime.In(loc))
+func getDateStr(date time.Time) string {
+	dateTime := roundTime(date)
 	now := roundTime(time.Now().In(loc))
 	duration := dateTime.Sub(now)
 	diffDays := int(duration.Hours() / 24)

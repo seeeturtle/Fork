@@ -28,10 +28,6 @@ const (
 	CannotUnderstand = "뭐라는 거지... 미안, 내가 좀 멍청해."
 )
 
-const timeForm string = "20060102"
-
-const LocForm string = "Asia/Seoul"
-
 var slangs = []string{
 	"개",
 	"걸레",
@@ -66,7 +62,7 @@ var slangs = []string{
 }
 
 var (
-	loc, _ = time.LoadLocation(LocForm)
+	loc, _ = time.LoadLocation("Asia/Seoul")
 	m      = Message{}
 	log    = logrus.New()
 )
@@ -145,7 +141,8 @@ func getResponseText(scope string, delicious bool) string {
 	for _, s := range Scopes {
 		if strings.Contains(scope, s.Name()) {
 			if s.Name() == "날짜" {
-				s.(*Day).date = string([]rune(scope)[2:])
+				dayTime, _ := time.Parse("20060102", string([]rune(scope)[2:]))
+				s.(*Day).date = dayTime.In(loc)
 			}
 			return message(s, delicious)
 		}
@@ -165,7 +162,7 @@ func message(s Scope, delicious bool) string {
 		if len(deliciousLunches) == 0 {
 			switch s.(type) {
 			case *Day:
-				dateTime, _ := time.Parse(timeForm, s.(*Day).date)
+				dateTime := s.(*Day).date
 				return fmt.Sprintf("%d월 %d일 ", dateTime.Month(), dateTime.Day()) + NoData
 			default:
 				return s.Name() + " " + NoData
@@ -184,7 +181,7 @@ func message(s Scope, delicious bool) string {
 	if len(lunches) == 0 {
 		switch s.(type) {
 		case *Day:
-			dateTime, _ := time.Parse(timeForm, s.(*Day).date)
+			dateTime := s.(*Day).date
 			return fmt.Sprintf("%d월 %d일 ", dateTime.Month(), dateTime.Day()) + NoData
 		default:
 			return s.Name() + " " + NoData

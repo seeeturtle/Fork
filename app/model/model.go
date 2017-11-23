@@ -7,11 +7,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const (
-	timeForm string = "20060102"
-	LocForm  string = "Asia/Seoul"
-)
-
 var (
 	Lunches *LunchesModel
 )
@@ -28,7 +23,7 @@ type Modeler interface {
 }
 
 type Lunch struct {
-	Date  string
+	Date  time.Time
 	Foods []Food
 }
 
@@ -45,12 +40,10 @@ func (l *LunchesModel) New(db *sql.DB) *LunchesModel {
 	return lunches
 }
 
-func (l *LunchesModel) Get(startDate, endDate string) ([]Lunch, error) {
+func (l *LunchesModel) Get(startTime, endTime time.Time) ([]Lunch, error) {
 	var lunches LunchesModel
-	loc, _ := time.LoadLocation(LocForm)
-	startTime, _ := time.ParseInLocation(timeForm, startDate, loc)
-	endTime, _ := time.ParseInLocation(timeForm, endDate, loc)
-	if startDate != endDate {
+
+	if startTime.Format("20060102") != endTime.Format("20060102") {
 		for d := startTime; d.Before(endTime) || d.Equal(endTime); d = d.AddDate(0, 0, 1) {
 			lunch, err := l.getADay(d)
 			if err != nil {
@@ -68,10 +61,10 @@ func (l *LunchesModel) Get(startDate, endDate string) ([]Lunch, error) {
 	return lunches.Value, nil
 }
 
-func (l *LunchesModel) GetDelicious(startDate, endDate string) ([]Lunch, error) {
+func (l *LunchesModel) GetDelicious(startTime, endTime time.Time) ([]Lunch, error) {
 	var deliciousLunches []Lunch
 
-	lunches, err := l.Get(startDate, endDate)
+	lunches, err := l.Get(startTime, endTime)
 
 	if err != nil {
 		return deliciousLunches, err
@@ -98,9 +91,8 @@ func (l *LunchesModel) getADay(d time.Time) (Lunch, error) {
 		lunch Lunch
 		foods []Food
 	)
-	date := d.Format(timeForm)
 	var lunchID int
-	err := l.DB.QueryRow("SELECT lunch_id FROM lunches WHERE date=$1", date).Scan(&lunchID)
+	err := l.DB.QueryRow("SELECT lunch_id FROM lunches WHERE date=$1", d.Format("20060102")).Scan(&lunchID)
 
 	if err != nil {
 		return lunch, err
@@ -144,7 +136,7 @@ func (l *LunchesModel) getADay(d time.Time) (Lunch, error) {
 		return lunch, err
 	}
 
-	lunch.Date = date
+	lunch.Date = d
 	lunch.Foods = foods
 
 	return lunch, nil
