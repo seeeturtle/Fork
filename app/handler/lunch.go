@@ -113,6 +113,14 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	- 오늘 급식
 	
 	아직 문의 기능이 없어.
+	
+	혹시 타자 치는 걸 귀찮을꺼 같아서 단축키도 있지\
+	오늘 급식 -> ㅇㄴ
+	내일 급식 -> ㄴㅇ
+	모레 급식 -> ㅁㄹ
+	글피 급식 -> ㄱㅍ
+	이번주 급식 -> ㅇㅂㅈ
+	다음주 급식 -> ㄷㅇㅈ
 	`
 	ok, delicious, similar, slang, date := parseContent(m.Content)
 

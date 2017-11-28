@@ -14,12 +14,43 @@ func parseContent(str string) (ok, delicious, similar, slang bool, date string) 
 			continue
 		}
 		d := re.FindString(w)
+		spaceRemoved := strings.Join(strings.Fields(w), "")
 		switch {
 		case d != "":
 			if date == "" {
 				t, _ := time.Parse("2006년1월2일", time.Now().In(loc).Format("2006년")+d)
 				date = t.Format("20060102")
 			}
+		case spaceRemoved == "ㅇㄴ":
+			if date == "" {
+				date = "오늘"
+			}
+			ok = true
+		case spaceRemoved == "ㄴㅇ":
+			if date == "" {
+				date = "내일"
+			}
+			ok = true
+		case spaceRemoved == "ㅁㄹ":
+			if date == "" {
+				date = "모레"
+			}
+			ok = true
+		case spaceRemoved == "ㄱㅍ":
+			if date == "" {
+				date = "글피"
+			}
+			ok = true
+		case spaceRemoved == "ㅇㅂㅈ":
+			if date == "" {
+				date = "이번주"
+			}
+			ok = true
+		case spaceRemoved == "ㄷㅇㅈ":
+			if date == "" {
+				date = "다음주"
+			}
+			ok = true
 		case strings.Contains(w, "오늘"):
 			if date == "" {
 				date = "오늘"
@@ -210,6 +241,9 @@ func separate(a rune) []int {
 
 func cutByTwo(a []int) []int {
 	var result []int
+	if len(a) <= 0 {
+		return result
+	}
 	result = append(result, (a[0]+3)*30)
 	for index, i := range a {
 		if index == len(a)-1 {
