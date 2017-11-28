@@ -83,6 +83,22 @@ func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		var text string
+		var response Response = make(Response)
+		if r := recover(); r != nil {
+			log.WithFields(logrus.Fields{
+				"user_key": m.UserKey,
+				"error":    r,
+			}).Info("Panic Caused.")
+			text = Error
+		}
+		if text != "" {
+			response["message"] = make(map[string]string)
+			response["message"]["text"] = text
+			respondJSON(w, http.StatusOK, response)
+		}
+	}()
 	now.FirstDayMonday = true
 	log.Out = os.Stdout
 
