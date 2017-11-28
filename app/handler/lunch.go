@@ -111,8 +111,8 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	- 오늘 맛있는 급식 알려줘.
 	- 내일 급식 맛있는 게 뭐 있지?
 	- 오늘 급식
-
-	문의 기능은 아직... 학교에서 문의해줘.
+	
+	아직 문의 기능이 없어.
 	`
 	ok, delicious, similar, slang, date := parseContent(m.Content)
 
