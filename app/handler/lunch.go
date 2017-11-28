@@ -125,12 +125,12 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = "자! 어떤 급식이 궁금하니?"
 	case slang:
 		text = "내가 아무리 멍청해도 욕은 알아들어!"
-	case ok && similar && !delicious:
-		text = date + ` 급식을 원하는거야? 그러면 "` + date + ` 급식" 이라고 말해줘.`
-	case ok && similar && delicious:
-		text = date + ` 맛있는 급식을 원하는거야? 그러면 "` + date + ` 맛있는 급식" 이라고 말해줘.`
-	case ok && (date != ""):
+	case ok && (date != "") && !similar:
 		text = getResponseText(date, delicious)
+	case date != "" && !delicious:
+		text = date + ` 급식을 원하는거야? 그러면 "` + date + ` 급식" 이라고 말해줘.`
+	case date != "" && delicious:
+		text = date + ` 맛있는 급식을 원하는거야? 그러면 "` + date + ` 맛있는 급식" 이라고 말해줘.`
 	case ok && (date == ""):
 		text = "언제 급식을 원하는 거야?"
 	default:
@@ -145,7 +145,7 @@ func getResponseText(scope string, delicious bool) string {
 	for _, s := range Scopes {
 		if strings.Contains(scope, s.Name()) {
 			if s.Name() == "날짜" {
-				dayTime, _ := time.Parse("20060102", string([]rune(scope)[2:]))
+				dayTime, _ := time.Parse("20060102", scope)
 				s.(*Day).date = dayTime.In(loc)
 			}
 			return message(s, delicious)

@@ -18,7 +18,7 @@ func parseContent(str string) (ok, delicious, similar, slang bool, date string) 
 		case d != "":
 			if date == "" {
 				t, _ := time.Parse("2006년1월2일", time.Now().In(loc).Format("2006년")+d)
-				date = "날짜" + t.Format("20060102")
+				date = t.Format("20060102")
 			}
 		case strings.Contains(w, "오늘"):
 			if date == "" {
