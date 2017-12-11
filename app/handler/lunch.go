@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jinzhu/now"
@@ -138,7 +137,13 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	이번주 급식 -> ㅇㅂㅈ
 	다음주 급식 -> ㄷㅇㅈ
 	`
-	ok, delicious, similar, slang, date := parseContent(m.Content)
+	ok, delicious, similar, slang, scope := parseContent(m.Content)
+
+	var isUndefinedScope bool
+	switch scope.(type) {
+	case UndefinedScope:
+		isUndefinedScope = true
+	}
 
 	switch {
 	case m.Type != "text":
@@ -149,13 +154,13 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 		text = "자! 어떤 급식이 궁금하니?"
 	case slang:
 		text = "내가 아무리 멍청해도 욕은 알아들어!"
-	case ok && (date != "") && !similar:
-		text = getResponseText(date, delicious)
-	case date != "" && !delicious:
-		text = date + ` 급식을 원하는거야? 그러면 "` + date + ` 급식" 이라고 말해줘.`
-	case date != "" && delicious:
-		text = date + ` 맛있는 급식을 원하는거야? 그러면 "` + date + ` 맛있는 급식" 이라고 말해줘.`
-	case ok && (date == ""):
+	case ok && !isUndefinedScope && !similar:
+		text = message(scope, delicious)
+	case !isUndefinedScope && !delicious:
+		text = scope.Name() + ` 급식을 원하는거야? 그러면 "` + scope.Name() + ` 급식" 이라고 말해줘.`
+	case !isUndefinedScope && delicious:
+		text = scope.Name() + ` 맛있는 급식을 원하는거야? 그러면 "` + scope.Name() + ` 맛있는 급식" 이라고 말해줘.`
+	case ok && isUndefinedScope:
 		text = "언제 급식을 원하는 거야?"
 	default:
 		text = CannotUnderstand
@@ -165,23 +170,6 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, response)
 }
 
-func getResponseText(scope string, delicious bool) string {
-	for _, s := range Scopes {
-		if strings.Contains(scope, s.Name()) {
-			if s.Name() == "날짜" {
-				dayTime, _ := time.Parse("20060102", scope)
-				s.(*Day).date = dayTime.In(loc)
-			}
-			return message(s, delicious)
-		}
-	}
-	log.WithFields(logrus.Fields{
-		"user_key": m.UserKey,
-		"scope":    scope,
-	}).Info("Fields doesn't support")
-	return CannotUnderstand
-}
-
 func message(s Scope, delicious bool) string {
 	beginning := s.Beginning()
 	end := s.End()
@@ -189,8 +177,8 @@ func message(s Scope, delicious bool) string {
 		deliciousLunches, err := model.Lunches.GetDelicious(beginning, end)
 		if len(deliciousLunches) == 0 {
 			switch s.(type) {
-			case *Day:
-				dateTime := s.(*Day).date
+			case Day:
+				dateTime := s.(Day).date
 				return fmt.Sprintf("%d월 %d일 ", dateTime.Month(), dateTime.Day()) + NoData
 			default:
 				return s.Name() + " " + NoData
@@ -208,8 +196,8 @@ func message(s Scope, delicious bool) string {
 	lunches, err := model.Lunches.Get(beginning, end)
 	if len(lunches) == 0 {
 		switch s.(type) {
-		case *Day:
-			dateTime := s.(*Day).date
+		case Day:
+			dateTime := s.(Day).date
 			return fmt.Sprintf("%d월 %d일 ", dateTime.Month(), dateTime.Day()) + NoData
 		default:
 			return s.Name() + " " + NoData

@@ -18,6 +18,10 @@ type Scope interface {
 	DeliciousFoodMessage([]model.Lunch) string
 }
 
+type NilScope struct{}
+
+type UndefinedScope struct{}
+
 type Day struct {
 	name string
 	date time.Time
@@ -60,7 +64,6 @@ type NextMonth struct {
 }
 
 var Scopes = []Scope{
-	&Day{name: "날짜"},
 	Today{name: "오늘"},
 	Tomorrow{name: "내일"},
 	Nextomorrow{name: "모레"},
@@ -72,11 +75,50 @@ var Scopes = []Scope{
 	NextMonth{name: "다음달"},
 }
 
-func (d *Day) Beginning() time.Time {
+func (n NilScope) Beginning() time.Time {
+	return time.Time{}
+}
+
+func (n NilScope) End() time.Time {
+	return time.Time{}
+}
+
+func (n NilScope) Name() string {
+	return ""
+}
+
+func (n NilScope) FoodMessage(lunches []model.Lunch) string {
+	return ""
+}
+
+func (n NilScope) DeliciousFoodMessage(lunches []model.Lunch) string {
+	return ""
+}
+
+func (u UndefinedScope) Beginning() time.Time {
+	return time.Time{}
+}
+
+func (u UndefinedScope) End() time.Time {
+	return time.Time{}
+}
+
+func (u UndefinedScope) Name() string {
+	return ""
+}
+
+func (u UndefinedScope) FoodMessage(lunches []model.Lunch) string {
+	return ""
+}
+
+func (u UndefinedScope) DeliciousFoodMessage(lunches []model.Lunch) string {
+	return ""
+}
+func (d Day) Beginning() time.Time {
 	return d.date
 }
 
-func (d *Day) End() time.Time {
+func (d Day) End() time.Time {
 	return d.date
 }
 
