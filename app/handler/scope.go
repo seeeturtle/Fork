@@ -378,7 +378,7 @@ func getDatesStr(date time.Time) string {
 		"토요일",
 	}
 	dateTime := date
-	n := time.Now()
+	n := time.Now().In(loc)
 	diffWeeks := int(now.New(dateTime).BeginningOfWeek().Sub(now.New(n).BeginningOfWeek())) / (int(time.Hour) * 24 * 7)
 	weekDay := weekDays[int(dateTime.Weekday())]
 	switch {
