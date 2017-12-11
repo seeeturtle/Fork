@@ -8,9 +8,9 @@ import (
 	"database/sql"
 
 	"github.com/gorilla/mux"
-	"github.com/joshua1b/Fork/app/handler"
-	"github.com/joshua1b/Fork/app/model"
-	"github.com/joshua1b/Fork/config"
+	"github.com/seeeturtle/Fork/app/handler"
+	"github.com/seeeturtle/Fork/app/model"
+	"github.com/seeeturtle/Fork/config"
 	_ "github.com/lib/pq"
 )
 

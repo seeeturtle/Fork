@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/joshua1b/Fork/app"
-	"github.com/joshua1b/Fork/config"
+	"github.com/seeeturtle/Fork/app"
+	"github.com/seeeturtle/Fork/config"
 )
 
 func main() {

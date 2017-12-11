@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/now"
-	"github.com/joshua1b/Fork/app/model"
+	"github.com/seeeturtle/Fork/app/model"
 	"github.com/sirupsen/logrus"
 )
 
