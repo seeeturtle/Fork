@@ -45,9 +45,9 @@ func GetKeyboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateMessage(w http.ResponseWriter, r *http.Request) {
-	defer func() {
+	mustDo(w, r, createMessage, func() {
 		var text string
-		var response Response = make(Response)
+		response := make(Response)
 		if r := recover(); r != nil {
 			log.WithFields(logrus.Fields{
 				"user_key": m.UserKey,
@@ -60,7 +60,10 @@ func CreateMessage(w http.ResponseWriter, r *http.Request) {
 			response["message"]["text"] = text
 			respondJSON(w, http.StatusOK, response)
 		}
-	}()
+	})
+}
+
+func createMessage(w http.ResponseWriter, r *http.Request) {
 	now.FirstDayMonday = true
 	log.Out = os.Stdout
 

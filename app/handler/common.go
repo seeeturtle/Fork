@@ -22,3 +22,8 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 func respondError(w http.ResponseWriter, code int, message string) {
 	respondJSON(w, code, map[string]string{"error": message})
 }
+
+func mustDo(w http.ResponseWriter, r *http.Request, handlerFunc http.HandlerFunc, do func()) {
+	defer do()
+	handlerFunc(w, r)
+}
