@@ -8,10 +8,10 @@ import (
 	"database/sql"
 
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 	"github.com/seeeturtle/Fork/app/handler"
 	"github.com/seeeturtle/Fork/app/model"
 	"github.com/seeeturtle/Fork/config"
-	_ "github.com/lib/pq"
 )
 
 // App has router and db instances
