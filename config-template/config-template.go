@@ -1,4 +1,4 @@
-package configTemplate
+package config
 
 type Config struct {
 	DB *DBConfig
